@@ -1,0 +1,11 @@
+[package]
+name = "bytedata-unicode-files"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["queue"] }

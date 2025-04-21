@@ -1,0 +1,16 @@
+[package]
+name = "bytedata-xml-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+smallvec = { version = "1.14.0", features = ["union", "const_new"] }
+
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["chunk", "queue"] }
+
+bytedata-io = { path = "../bytedata-io" }
+bytedata-charset = { path = "../bytedata-charset", features = ["web"] }

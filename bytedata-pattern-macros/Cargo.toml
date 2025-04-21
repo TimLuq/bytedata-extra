@@ -1,0 +1,18 @@
+[package]
+name = "bytedata-pattern-macros"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.86"
+syn = "2.0.96"
+quote = "1.0.38"
+
+bytedata-pattern-core = { path = "../bytedata-pattern-core", version = "0.1.0", features = [], default-features = false }

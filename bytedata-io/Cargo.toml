@@ -1,0 +1,19 @@
+[package]
+name = "bytedata-io"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["chunk", "queue", "alloc"] }
+tokio_1 = { package = "tokio", version = "1", defaukt-features = false, optional = true}
+async-lock = { package = "async-lock", version = "3", default-features = false, optional = true }
+
+[features]
+default = ["std", "stream", "tokio_1"]
+tokio_1 = ["dep:tokio_1"]
+std = ["bytedata/std"]
+stream = ["dep:async-lock"]
