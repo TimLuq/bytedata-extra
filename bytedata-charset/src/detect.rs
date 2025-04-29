@@ -15,6 +15,7 @@ pub enum Confidence {
 /// A detector that checks if a charset is a possible match for the given byte sequence.
 pub trait CharsetDetector {
     /// Detects the presence of a BOM or reasonable bytes in the given byte sequence.
+    #[must_use]
     fn detect(&self, bytes: &[u8]) -> DetectionResult;
 }
 
@@ -115,7 +116,6 @@ impl DetectionResult {
 
 impl From<crate::detect::Confidence> for DetectionResult {
     #[inline]
-    #[must_use]
     fn from(confidence: crate::detect::Confidence) -> Self {
         Self::from_confidence(confidence)
     }
@@ -198,7 +198,6 @@ impl UtfDetector {
 }
 
 impl CharsetDetector for UtfDetector {
-    #[must_use]
     #[inline]
     fn detect(&self, bytes: &[u8]) -> DetectionResult {
         Self::detect_const(bytes)

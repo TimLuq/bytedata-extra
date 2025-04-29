@@ -16,6 +16,52 @@ impl Utf8Encoding {
         Self
     }
 
+    /// Decode characters from the given bytes.
+    #[inline]
+    #[must_use]
+    pub fn decode(&self, bytes: &[u8]) -> crate::DecodeResult {
+        const fn fallback(bytes: &[u8]) -> crate::DecodeResult {
+            decode_const_inner(bytes)
+        }
+
+        let maxlen = bytes.len();
+        if maxlen == 0 {
+            return crate::DecodeResult::Empty;
+        }
+        let bytes_ptr = bytes.as_ptr();
+
+        #[cfg(all(target_arch = "x86_64", feature = "avx512f"))]
+        if maxlen >= 64 && is_x86_feature_detected!("avx512f") {
+            // SAFETY: The pointer is valid and the length is correct, and avx512f has been checked.
+            let res = unsafe { super::ascii7::ascii7_decode_avx512(bytes_ptr, maxlen, 0) };
+            if !matches!(res, crate::DecodeResult::Empty) {
+                return res;
+            }
+        }
+
+        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), feature = "avx"))]
+        if maxlen >= 32 && is_x86_feature_detected!("avx") {
+            // SAFETY: The pointer is valid and the length is correct, and avx has been checked.
+            let res = unsafe { super::ascii7::ascii7_decode_avx(bytes_ptr, maxlen, 0) };
+            if !matches!(res, crate::DecodeResult::Empty) {
+                return res;
+            }
+        }
+
+        fallback(bytes)
+    }
+    
+    /// Encode characters from the given bytes.
+    #[inline]
+    #[must_use]
+    #[expect(clippy::missing_const_for_fn)]
+    pub fn encode(&self, chars: &str) -> crate::EncodeResult {
+        if chars.is_empty() {
+            return crate::EncodeResult::Empty;
+        }
+        crate::EncodeResult::Utf8(chars.len() as u64)
+    }
+
     /// Decode a UTF-8 byte sequence.
     #[inline]
     #[must_use]
@@ -23,20 +69,7 @@ impl Utf8Encoding {
         if bytes.is_empty() {
             return crate::DecodeResult::Empty;
         }
-        match core::str::from_utf8(bytes) {
-            Ok(st) => crate::DecodeResult::Utf8(st.len() as u64),
-            Err(err) => {
-                let vp = err.valid_up_to();
-                if vp != 0 {
-                    return crate::DecodeResult::Utf8(vp as u64);
-                }
-                if err.error_len().is_some() {
-                    crate::DecodeResult::InvalidChar(bytes[0] as u32, 1)
-                } else {
-                    crate::DecodeResult::Incomplete
-                }
-            }
-        }
+        decode_const_inner(bytes)
     }
 
     /// Encode a UTF-8 character sequence.
@@ -152,4 +185,23 @@ const fn detect_const_inner(bytes: &[u8]) -> crate::detect::DetectionResult {
         return crate::detect::DetectionResult::Irrelevant;
     }
     crate::detect::DetectionResult::Tentative
+}
+
+#[inline]
+#[must_use]
+const fn decode_const_inner(bytes: &[u8]) -> crate::DecodeResult {
+    match core::str::from_utf8(bytes) {
+        Ok(st) => crate::DecodeResult::Utf8(st.len() as u64),
+        Err(err) => {
+            let vp = err.valid_up_to();
+            if vp != 0 {
+                return crate::DecodeResult::Utf8(vp as u64);
+            }
+            if err.error_len().is_some() {
+                crate::DecodeResult::InvalidChar(bytes[0] as u32, 1)
+            } else {
+                crate::DecodeResult::Incomplete
+            }
+        }
+    }
 }

@@ -35,6 +35,7 @@ pub trait Charset {
     /// 
     /// This method can be overridden to provide a different name than the internal name dependant on the specifics of `self`.
     #[inline]
+    #[must_use]
     fn charset_name(&self) -> &'static str {
         Self::CHARSET_NAME
     }
@@ -43,6 +44,7 @@ pub trait Charset {
     /// 
     /// This method can be overridden to provide a different name than the internal name dependant on the specifics of `self`.
     #[inline]
+    #[must_use]
     fn charset_alias(&self) -> &[&'static str] {
         &[Self::CHARSET_NAME]
     }

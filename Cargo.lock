@@ -45,8 +45,8 @@ dependencies = [
 
 [[package]]
 name = "bytedata"
-version = "0.1.14"
-source = "git+https://github.com/TimLuq/bytedata.git?branch=main#5267aa50cf92203332f7dc6d96d1aba18df33ee0"
+version = "0.1.15"
+source = "git+https://github.com/TimLuq/bytedata.git?branch=main#2106adba2ab4f2369c7a14f4dfdb78a128e944c3"
 dependencies = [
  "bytes",
  "serde",
@@ -240,9 +240,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.100"
+version = "2.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b09a44accad81e1ba1cd74a32461ba89dee89095ba17b32f5d03683b1b1fc2a0"
+checksum = "8ce2b7fc941b3a24138a0a7cf8e858bfc6a992e7978a068a5c760deb0ed43caf"
 dependencies = [
  "proc-macro2",
  "quote",

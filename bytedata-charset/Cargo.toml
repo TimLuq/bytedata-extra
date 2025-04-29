@@ -13,7 +13,7 @@ keywords = ["encoding", "decoding", "unicode", "character-set", "charset", "byte
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["chunk", "queue"] }
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", version = "0.1.15", branch = "main", default-features = false, features = ["chunk", "queue"] }
 
 [features]
 default = [
@@ -22,6 +22,7 @@ default = [
     "nightly",
     "std",
     "ascii7-compat",
+    "java",
     "utf-32",
     "windows",
     "web",
@@ -62,6 +63,7 @@ multi-byte = []
 gbk = ["multi-byte", "gb18030"]
 gb18030 = ["multi-byte"]
 big5 = ["multi-byte"]
+java = ["multi-byte", "utf-16"]
 
 ### Placeholder as UTF-8 is always available
 utf-8 = []

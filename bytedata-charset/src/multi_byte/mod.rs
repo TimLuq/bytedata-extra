@@ -13,3 +13,8 @@ pub use gbk::*;
 mod big5;
 #[cfg(feature = "big5")]
 pub use big5::*;
+
+#[cfg(feature = "java")]
+mod java_utf;
+#[cfg(feature = "java")]
+pub use java_utf::*;

@@ -35,6 +35,7 @@ pub trait ByteDataSourceAsyncExt<'a>: ByteDataSourceAsync<'a> {
     /// Fill the buffer with more data, pending until the buffer is filled or an error occurs.
     /// Returns the number of bytes in the buffer after completing the attempt.
     /// The result value is the same as the value returned by `buffered().len()`, and is increased by the number of bytes added to the buffer.
+    #[must_use]
     fn fill_async(&'_ mut self) -> ByteDataSourceFill<'a, '_, Self>;
 }
 
