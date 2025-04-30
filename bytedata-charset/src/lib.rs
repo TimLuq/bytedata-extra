@@ -160,6 +160,5 @@ pub mod single_byte;
 mod decode_stream;
 pub use decode_stream::*;
 
-pub use result::DecodeResult;
-pub use result::EncodeResult;
+pub use result::{DecodeResult, EncodeResult, ExhaustiveDecodeResult, ExhaustiveEncodeResult};
 pub use endian::CharsetEndian;
