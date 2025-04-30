@@ -90,6 +90,63 @@ impl AsciiCompatible {
         fallback(self, bytes)
     }
 
+    /// Decode characters from the given bytes.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[inline]
+    #[must_use]
+    pub fn decode_into(
+        &self,
+        bytes: &[u8],
+        chars: &mut bytedata::SharedStrBuilder,
+    ) -> crate::ExhaustiveDecodeResult<(u32, u32)> {
+        if bytes.is_empty() {
+            return crate::ExhaustiveDecodeResult::Empty;
+        }
+        Self::decode_into_inner(self, bytes, chars)
+    }
+
+    /// Decode characters from the given bytes.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[must_use]
+    fn decode_into_inner(
+        &self,
+        mut bytes: &[u8],
+        chars: &mut bytedata::SharedStrBuilder,
+    ) -> crate::ExhaustiveDecodeResult<(u32, u32)> {
+        let mut consumed = 0;
+        let chars_prefix = chars.len();
+        loop {
+            let res = self.decode(bytes);
+            match res {
+                crate::DecodeResult::Char(ch, len) => {
+                    chars.push(ch);
+                    consumed += len;
+                    // SAFETY: The pointer is valid and the length is correct.
+                    bytes = unsafe { bytes.get_unchecked(len as usize..) };
+                }
+                #[expect(clippy::cast_possible_truncation)]
+                crate::DecodeResult::Utf8(len) => {
+                    let len = len as usize;
+                    // SAFETY: The pointer is valid and the length is correct.
+                    let utf8 = unsafe { core::str::from_utf8_unchecked(&bytes[..len]) };
+                    chars.push_str(utf8);
+                    // SAFETY: The pointer is valid and the length is correct.
+                    bytes = unsafe { bytes.get_unchecked(len..) };
+                    consumed += len as u32;
+                }
+                _ if consumed != 0 => break,
+                crate::DecodeResult::InvalidChar(ch, len) => return crate::ExhaustiveDecodeResult::InvalidChar(ch, len),
+                crate::DecodeResult::Incomplete => return crate::ExhaustiveDecodeResult::Incomplete,
+                crate::DecodeResult::Empty => return crate::ExhaustiveDecodeResult::Empty,
+            }
+        }
+        let chars_len = chars.len() - chars_prefix;
+        #[expect(clippy::cast_possible_truncation)]
+        crate::ExhaustiveDecodeResult::Decoded((consumed, chars_len as u32))
+    }
+
     /// Encode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -193,6 +250,7 @@ const fn decode_const_inner(chars: &[char; 128], byte: u8) -> crate::DecodeResul
     }
 }
 
+#[expect(clippy::too_many_lines)]
 const fn encode_const_inner(chars: &'static [char; 128], data: &str) -> crate::EncodeResult {
     /// Find a character in the extended charset. Returns `0` if not found or if the value was actually `0`.
     #[inline]
