@@ -113,7 +113,6 @@ impl CharsetDecoding for Utf32Encoding {
 #[cfg_attr(docsrs, doc(cfg(feature = "utf-32")))]
 impl crate::CharsetEncoding for Utf32Encoding {
     #[inline]
-    #[must_use]
     fn encode(&self, chars: &str) -> crate::EncodeResult {
         let len = chars.len();
         if len == 0 {

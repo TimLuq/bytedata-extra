@@ -29,7 +29,7 @@ pub enum ExhaustiveDecodeResult<T> {
 }
 
 /// The result of a charset decoding operation.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_enums)]
 pub enum EncodeResult {
     /// The next number of bytes from the str is encoded into a buffer. The encoded sequence and the number of bytes consumed are returned.

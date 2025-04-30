@@ -15,6 +15,8 @@ impl Utf16Encoding {
     pub const UTF16_LE: Self = Self::new(CharsetEndian::Little);
     /// UTF-16 big endian decoder.
     pub const UTF16_BE: Self = Self::new(CharsetEndian::Big);
+    /// UTF-16 decoder with system endianness.
+    pub const UTF16_NATIVE: Self = Self::new(CharsetEndian::NATIVE);
 
     /// Create a new UTF-16 decoder with the specified endianness.
     #[inline]
@@ -34,6 +36,84 @@ impl Utf16Encoding {
             return DecodeResult::Incomplete;
         }
         self.decode_const_inner(bytes)
+    }
+
+    /// Decode a UTF-16 byte sequence.
+    #[must_use]
+    #[inline]
+    pub fn decode(self, bytes: &[u8]) -> DecodeResult {
+        if bytes.is_empty() {
+            return DecodeResult::Empty;
+        }
+        if bytes.len() == 1 {
+            return DecodeResult::Incomplete;
+        }
+        if self.0.is_native() && (bytes.as_ptr() as usize) & 1 == 0 {
+            // SAFETY: bytes is a valid pointer to u16
+            #[expect(clippy::cast_ptr_alignment)]
+            let native = unsafe { core::slice::from_raw_parts(bytes.as_ptr().cast::<u16>(), bytes.len() >> 1) };
+            Self::decode_native_inner_16(native)
+        } else {
+            self.decode_const_inner(bytes)
+        }
+    }
+
+    /// Decode a UTF-16 sequence.
+    #[must_use]
+    #[inline]
+    pub const fn decode_native_const(native: &[u16]) -> DecodeResult {
+        if native.is_empty() {
+            return DecodeResult::Empty;
+        }
+        if native.len() == 1 {
+            return DecodeResult::Incomplete;
+        }
+        Self::decode_native_inner_16(native)
+    }
+
+    /// Decode a UTF-16 sequence into a `bytedata::SharedStrBuilder`.
+    /// The `Decoded` result variant contains the number of bytes consumed.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[inline]
+    pub fn decode_native_into(seq: &[u16], chars: &mut bytedata::SharedStrBuilder) -> crate::result::ExhaustiveDecodeResult<usize> {
+        if seq.is_empty() {
+            return crate::result::ExhaustiveDecodeResult::Decoded(0);
+        }
+        Self::decode_native_into_inner(seq, chars)
+    }
+    
+    #[cfg(feature = "alloc")]
+    fn decode_native_into_inner(mut seq: &[u16], chars: &mut bytedata::SharedStrBuilder) -> crate::result::ExhaustiveDecodeResult<usize> {
+        let mut consumed = 0;
+        while !seq.is_empty() {
+            let res = Self::decode_native_inner_16(seq);
+            match res {
+                DecodeResult::Char(ch, len) => {
+                    let len = len as usize >> 1_i32;
+                    chars.push(ch);
+                    consumed += len;
+                    // SAFETY: the length is returned from the decode function
+                    seq = unsafe { seq.get_unchecked(len..) };
+                }
+                _ if consumed != 0 => {
+                    return crate::result::ExhaustiveDecodeResult::Decoded(consumed);
+                }
+                DecodeResult::InvalidChar(base, len) => {
+                    return crate::result::ExhaustiveDecodeResult::InvalidChar(base, len >> 1);
+                }
+                DecodeResult::Incomplete => {
+                    return crate::result::ExhaustiveDecodeResult::Incomplete;
+                }
+                DecodeResult::Empty => {
+                    return crate::result::ExhaustiveDecodeResult::Empty;
+                }
+                DecodeResult::Utf8(_len) => {
+                    unreachable!("UTF-8 is not supported in this function");
+                }
+            }
+        }
+        crate::result::ExhaustiveDecodeResult::Decoded(consumed)
     }
 
     /// Decode a UTF-16 byte sequence. This function assumes that the input is at least 2 bytes long.
@@ -68,6 +148,39 @@ impl Utf16Encoding {
             CharsetEndian::Big => cont.to_be() as u32,
             CharsetEndian::Little => cont.to_le() as u32,
         };
+        if cont < 0xDC00 || cont >= 0xE000 {
+            return DecodeResult::InvalidChar(base, 2);
+        }
+        let base = 0x1_0000 + (((base & 0x03FF) << 10_u32) | (cont & 0x03FF));
+        match char::from_u32(base) {
+            Some(ch) => DecodeResult::Char(ch, 4),
+            None => DecodeResult::InvalidChar(base, 4),
+        }
+    }
+    
+
+    /// Decode a UTF-16 native sequence. This function assumes that the input is at least one u16 long.
+    const fn decode_native_inner_16(bytes: &[u16]) -> DecodeResult {
+        let len = bytes.len();
+        debug_assert!(len >= 1, "The input must be at least 1 u16 long.");
+        let bytes = bytes.as_ptr();
+        // SAFETY: bytes is a valid pointer to u16, though it may be unaligned
+        let base = unsafe { bytes.read() } as u32;
+        if base < 0xD800 || base >= 0xE000 {
+            // SAFETY: base is a valid char code point, transmuting to char is safe
+            return DecodeResult::Char(unsafe { ::core::mem::transmute::<u32, char>(base) }, 2);
+        }
+        if base >= 0xDC00 {
+            return DecodeResult::InvalidChar(base, 2);
+        }
+        if len < 2 {
+            return DecodeResult::Incomplete;
+        }
+
+        // SAFETY: length is checked above
+        let bytes = unsafe { bytes.add(1) };
+        // SAFETY: bytes is a valid pointer to u16, though it may be unaligned
+        let cont = unsafe { bytes.read() } as u32;
         if cont < 0xDC00 || cont >= 0xE000 {
             return DecodeResult::InvalidChar(base, 2);
         }
@@ -179,7 +292,7 @@ impl crate::Charset for Utf16Encoding {
 impl CharsetDecoding for Utf16Encoding {
     #[inline]
     fn decode(&self, bytes: &[u8]) -> DecodeResult {
-        Self::decode_const(*self, bytes)
+        Self::decode(*self, bytes)
     }
 }
 
@@ -806,5 +919,108 @@ impl core::iter::DoubleEndedIterator for Utf16Chars<'_> {
             // SAFETY: uc is a valid code point
             Some(unsafe { core::mem::transmute::<u32, char>(uc) })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{CharsetEncoding, ExhaustiveDecodeResult};
+
+    #[test]
+    fn test_utf16_le() {
+        let utf16 = UTF16_LE;
+        {
+            let bytes = [0x61, 0x00, 0x62, 0x00, 0x63, 0x00];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Char('a', 2));
+            assert_eq!(utf16.encode("abc"), crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&[0x61, 0x00, 0x62, 0x00, 0x63, 0x00]), 3));
+        };
+        {
+            let bytes = [0x61];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Incomplete);
+        };
+        {
+            let res = utf16.decode(&[]);
+            assert_eq!(res, DecodeResult::Empty);
+        };
+        {
+            let bytes = [0x00, 0xD8, 0x00, 0xDC];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Char('𐀀', 4));
+        };
+        {
+            let bytes = [0x00, 0xD8];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Incomplete);
+        };
+        {
+            let bytes = [0x00, 0xD8, 0x00, 0x00];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::InvalidChar(0xD800, 2));
+        };
+    }
+
+    #[test]
+    fn test_utf16_be() {
+        let utf16 = UTF16_BE;
+        {
+            let bytes = [0x00, 0x61, 0x00, 0x62, 0x00, 0x63];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Char('a', 2));
+            assert_eq!(utf16.encode("abc"), crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&[0x00, 0x61, 0x00, 0x62, 0x00, 0x63]), 3));
+        };
+        {
+            let bytes = [0x61];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Incomplete);
+        };
+        {
+            let res = utf16.decode(&[]);
+            assert_eq!(res, DecodeResult::Empty);
+        };
+        {
+            let bytes = [0xD8, 0x00, 0xDC, 0x00];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Char('𐀀', 4));
+        };
+        {
+            let bytes = [0xD8, 0x00];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::Incomplete);
+        };
+        {
+            let bytes = [0xD8, 0x00, 0x00, 0x00];
+            let res = utf16.decode(&bytes);
+            assert_eq!(res, DecodeResult::InvalidChar(0xD800, 2));
+        };
+    }
+
+    #[test]
+    fn test_utf16_native() {
+        {
+            let res = Utf16Encoding::decode_native_const(&[0x0061, 0x0062, 0x0063]);
+            assert_eq!(res, DecodeResult::Char('a', 2));
+        };
+        {
+            let res = Utf16Encoding::decode_native_const(&[0xD800, 0xDC00]);
+            assert_eq!(res, DecodeResult::Char('𐀀', 4));
+        };
+        {
+            let res = Utf16Encoding::decode_native_const(&[0xD800]);
+            assert_eq!(res, DecodeResult::Incomplete);
+        };
+        {
+            let res = Utf16Encoding::decode_native_const(&[0xD800, 0x0000]);
+            assert_eq!(res, DecodeResult::InvalidChar(0xD800, 2));
+        };
+        #[cfg(feature = "alloc")]
+        {
+            let mut buff = bytedata::SharedStrBuilder::new();
+            let res = Utf16Encoding::decode_native_into(&[0x0061, 0x0062, 0x0063, 0xD800, 0xDC00, 0x0064], &mut buff);
+            assert_eq!(res, ExhaustiveDecodeResult::Decoded(6));
+            assert_eq!(buff.as_str(), "abc𐀀d");
+        };
     }
 }

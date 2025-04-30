@@ -69,6 +69,7 @@ impl JavaModifiedUtf8Encoding {
     ///
     /// The caller must ensure that the pointer is valid and points to a null-terminated string.
     #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     #[allow(clippy::missing_inline_in_public_items)]
     pub unsafe fn decode_cstr_into(
         bytes: *const i8,
