@@ -49,7 +49,6 @@ impl Utf32Encoding {
         }
     }
 
-    
     fn encode_inner(self, chars: &str) -> crate::EncodeResult {
         let mut buf = [0_u32; 3];
         let mut buf_use = 0;
@@ -58,7 +57,10 @@ impl Utf32Encoding {
                 // SAFETY: buf is filled with valid u32 values in the correct endianness
                 let buf = unsafe { core::mem::transmute::<[u32; 3], [u8; 12]>(buf) };
                 #[expect(clippy::cast_possible_truncation)]
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_array(&buf), idx as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_array(&buf),
+                    idx as u16,
+                );
             }
             let ch = ch as u32;
             buf[buf_use] = match self.0 {
@@ -73,7 +75,10 @@ impl Utf32Encoding {
         // SAFETY: buf is partially(?) filled with valid u32 values in the correct endianness
         let buf = unsafe { core::mem::transmute::<[u32; 3], [u8; 12]>(buf) };
         #[expect(clippy::cast_possible_truncation)]
-        crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&buf[0..(buf_use << 2)]), chars.len() as u16)
+        crate::EncodeResult::Chunk(
+            bytedata::ByteChunk::from_slice(&buf[0..(buf_use << 2)]),
+            chars.len() as u16,
+        )
     }
 
     /// Detect the if the bytes are UTF-32 encoded.
@@ -81,12 +86,8 @@ impl Utf32Encoding {
     #[must_use]
     pub const fn detect_const(self, bytes: &[u8]) -> crate::detect::DetectionResult {
         match self.0 {
-            CharsetEndian::Big => {
-                detect_be(bytes)
-            }
-            CharsetEndian::Little => {
-                detect_le(bytes)
-            }
+            CharsetEndian::Big => detect_be(bytes),
+            CharsetEndian::Little => detect_le(bytes),
         }
     }
 }
@@ -133,7 +134,7 @@ const fn detect_be(bytes: &[u8]) -> crate::detect::DetectionResult {
     if bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0xFE && bytes[3] == 0xFF {
         return crate::detect::DetectionResult::Certain;
     }
-    
+
     let bytes: *const u8 = bytes.as_ptr();
 
     // when no BOM is present, check for bytes matching UTF-32BE
@@ -192,12 +193,8 @@ impl crate::detect::CharsetDetector for Utf32Encoding {
     #[inline]
     fn detect(&self, bytes: &[u8]) -> crate::detect::DetectionResult {
         match self.0 {
-            CharsetEndian::Big => {
-                detect_be(bytes)
-            }
-            CharsetEndian::Little => {
-                detect_le(bytes)
-            }
+            CharsetEndian::Big => detect_be(bytes),
+            CharsetEndian::Little => detect_le(bytes),
         }
     }
 }

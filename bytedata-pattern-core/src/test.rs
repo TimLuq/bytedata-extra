@@ -1,4 +1,7 @@
-use crate::{test_exec::{ExecFlag, ExecResult, TestExec}, CharacterClass, ContextClass};
+use crate::{
+    test_exec::{ExecFlag, ExecResult, TestExec},
+    CharacterClass, ContextClass,
+};
 
 #[derive(Clone, Copy)]
 enum TestInner<'a> {
@@ -31,7 +34,9 @@ impl core::fmt::Debug for TestInner<'_> {
             Verbatim(text) => f.write_fmt(format_args!("Test::verbatim({:?})", *text)),
             Class(class) => f.write_fmt(format_args!("Test::char_class({:?})", class)),
             Context(cc) => f.write_fmt(format_args!("Test::context_class({:?})", cc)),
-            CharRange(start, end) => f.write_fmt(format_args!("Test::char_range({:?}, {:?})", start, end)),
+            CharRange(start, end) => {
+                f.write_fmt(format_args!("Test::char_range({:?}, {:?})", start, end))
+            }
             OneOf(list) => {
                 f.write_str("Test::one_of(&")?;
                 f.debug_list().entries(list.iter()).finish()?;
@@ -43,7 +48,10 @@ impl core::fmt::Debug for TestInner<'_> {
                 f.debug_list().entries(list.iter()).finish()?;
                 f.write_str(")")
             }
-            Repeat(inner, (min, max)) => f.write_fmt(format_args!("Test::repeat(&{:?}, ({:?}, {:?}))", inner, min, max)),
+            Repeat(inner, (min, max)) => f.write_fmt(format_args!(
+                "Test::repeat(&{:?}, ({:?}, {:?}))",
+                inner, min, max
+            )),
         }
     }
 }
@@ -68,17 +76,23 @@ impl core::fmt::Display for TestInner<'_> {
                     }
                     let chr = char::from_u32(chr).unwrap();
                     match chr {
-                        '\\' | '[' | ']' | '^' | '-' | '(' | ')' | '{' | '}' | '|' | '*' | '+' | '?' | '.' | '$' => f.write_fmt(format_args!("\\{}", chr))?,
+                        '\\' | '[' | ']' | '^' | '-' | '(' | ')' | '{' | '}' | '|' | '*' | '+'
+                        | '?' | '.' | '$' => f.write_fmt(format_args!("\\{}", chr))?,
                         '\n' => f.write_str("\\n")?,
                         '\r' => f.write_str("\\r")?,
                         '\t' => f.write_str("\\t")?,
-                        _ if (chr as u32) < 32 || (chr as u32 >= 0x7F && chr as u32 <= 0x9F) => f.write_fmt(format_args!("\\x{:02x}", chr as u32))?,
+                        _ if (chr as u32) < 32 || (chr as u32 >= 0x7F && chr as u32 <= 0x9F) => {
+                            f.write_fmt(format_args!("\\x{:02x}", chr as u32))?
+                        }
                         _ => {
                             let mut bytes = [0u8; 4];
                             f.write_str(chr.encode_utf8(&mut bytes))?;
                         }
                     }
-                    list = bytedata::const_or_bytes(bytedata::const_slice(list, len as usize..list.len()), b"");
+                    list = bytedata::const_or_bytes(
+                        bytedata::const_slice(list, len as usize..list.len()),
+                        b"",
+                    );
                 }
                 Ok(())
             }
@@ -108,17 +122,24 @@ impl core::fmt::Display for TestInner<'_> {
                     }
                     let chr = char::from_u32(chr).unwrap();
                     match chr {
-                        '\\' | '[' | ']' | '^' | '-' | '$' => f.write_fmt(format_args!("\\{}", chr))?,
+                        '\\' | '[' | ']' | '^' | '-' | '$' => {
+                            f.write_fmt(format_args!("\\{}", chr))?
+                        }
                         '\n' => f.write_str("\\n")?,
                         '\r' => f.write_str("\\r")?,
                         '\t' => f.write_str("\\t")?,
-                        _ if (chr as u32) < 32 || (chr as u32 >= 0x7F && chr as u32 <= 0x9F) => f.write_fmt(format_args!("\\x{:02x}", chr as u32))?,
+                        _ if (chr as u32) < 32 || (chr as u32 >= 0x7F && chr as u32 <= 0x9F) => {
+                            f.write_fmt(format_args!("\\x{:02x}", chr as u32))?
+                        }
                         _ => {
                             let mut bytes = [0u8; 4];
                             f.write_str(chr.encode_utf8(&mut bytes))?;
                         }
                     }
-                    list = bytedata::const_or_bytes(bytedata::const_slice(list, len as usize..list.len()), b"");
+                    list = bytedata::const_or_bytes(
+                        bytedata::const_slice(list, len as usize..list.len()),
+                        b"",
+                    );
                 }
                 f.write_str("]")
             }
@@ -198,8 +219,14 @@ impl TestInner<'_> {
                         return exec;
                     }
                     let chk_len = chk_len as usize;
-                    expected = bytedata::const_or_bytes(bytedata::const_slice(expected, (exp_len as usize)..expected.len()), b"");
-                    exec.chunk = bytedata::const_or_bytes(bytedata::const_slice(exec.chunk, chk_len..exec.chunk.len()), b"");
+                    expected = bytedata::const_or_bytes(
+                        bytedata::const_slice(expected, (exp_len as usize)..expected.len()),
+                        b"",
+                    );
+                    exec.chunk = bytedata::const_or_bytes(
+                        bytedata::const_slice(exec.chunk, chk_len..exec.chunk.len()),
+                        b"",
+                    );
                     exec.offset += chk_len;
                     if let Some(chk_chr) = char::from_u32(chk_chr) {
                         if CharacterClass::Word.check_char(chk_chr) {
@@ -223,7 +250,10 @@ impl TestInner<'_> {
                 if let Some(chk_chr) = char::from_u32(chk_chr) {
                     if chk_chr as u32 >= start as u32 && chk_chr as u32 <= end as u32 {
                         let chk_len = chk_len as usize;
-                        exec.chunk = bytedata::const_or_bytes(bytedata::const_slice(exec.chunk, chk_len..exec.chunk.len()), b"");
+                        exec.chunk = bytedata::const_or_bytes(
+                            bytedata::const_slice(exec.chunk, chk_len..exec.chunk.len()),
+                            b"",
+                        );
                         exec.offset += chk_len;
                         if CharacterClass::Word.check_char(chk_chr) {
                             exec.flags.set(ExecFlag::PrevWord);
@@ -248,7 +278,9 @@ impl TestInner<'_> {
                     let f = &list[i];
                     i += 1;
                     let new_exec = f.run_test(exec);
-                    if new_exec.result.is_none() || matches!(new_exec.result, Some(ExecResult::Incomplete)) {
+                    if new_exec.result.is_none()
+                        || matches!(new_exec.result, Some(ExecResult::Incomplete))
+                    {
                         return new_exec;
                     }
                 }
@@ -282,7 +314,10 @@ impl TestInner<'_> {
                     }
                     if exp_chr == chk_chr as u32 {
                         let chk_len = chk_len as usize;
-                        exec.chunk = bytedata::const_or_bytes(bytedata::const_slice(exec.chunk, chk_len..exec.chunk.len()), b"");
+                        exec.chunk = bytedata::const_or_bytes(
+                            bytedata::const_slice(exec.chunk, chk_len..exec.chunk.len()),
+                            b"",
+                        );
                         exec.offset += chk_len;
                         if CharacterClass::Word.check_char(chk_chr) {
                             exec.flags.set(ExecFlag::PrevWord);
@@ -294,7 +329,10 @@ impl TestInner<'_> {
                             return exec;
                         }
                     }
-                    list = bytedata::const_or_bytes(bytedata::const_slice(list, exp_len as usize..list.len()), b"");
+                    list = bytedata::const_or_bytes(
+                        bytedata::const_slice(list, exp_len as usize..list.len()),
+                        b"",
+                    );
                 }
                 exec.result = Some(ExecResult::Mismatch);
                 exec
@@ -340,7 +378,7 @@ impl TestInner<'_> {
             }
         }
     }
-    
+
     pub const fn min_len(self) -> usize {
         match self {
             TestInner::Join(list) => {
@@ -385,7 +423,8 @@ impl TestInner<'_> {
                     if len < min_len {
                         min_len = len;
                     }
-                    list = bytedata::const_or_bytes(bytedata::const_slice(list, len..list.len()), b"");
+                    list =
+                        bytedata::const_or_bytes(bytedata::const_slice(list, len..list.len()), b"");
                 }
                 min_len
             }
@@ -450,7 +489,10 @@ impl<'a> Test<'a> {
     /// An inclusive match for all code points between the two characters.
     #[inline]
     pub const fn char_range(range_start: char, range_end: char) -> Self {
-        debug_assert!(range_start <= range_end, "start of the char range must be before the end, this will match nothing");
+        debug_assert!(
+            range_start <= range_end,
+            "start of the char range must be before the end, this will match nothing"
+        );
         Self {
             inner: TestInner::CharRange(range_start, range_end),
         }

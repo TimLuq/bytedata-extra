@@ -89,7 +89,7 @@ pub(crate) const ISO_8859_7_CHARSET: [char; 128] = {
     charset[0xED & 0x7F] = '\u{03BD}';
     charset[0xEE & 0x7F] = '\u{03BE}';
     charset[0xEF & 0x7F] = '\u{03BF}';
-    
+
     charset[0xF0 & 0x7F] = '\u{03C0}';
     charset[0xF1 & 0x7F] = '\u{03C1}';
     charset[0xF2 & 0x7F] = '\u{03C2}';
@@ -115,11 +115,14 @@ pub(crate) const ISO_8859_7_CHARSET: [char; 128] = {
 pub static ISO_8859_7: Iso8859_7 = Iso8859_7::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_7 as crate::Charset>::CHARSET_NAME, &ISO_8859_7_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_7 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_7_CHARSET,
+);
 
 /// An encoding for ISO-8859-7.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -127,7 +130,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_7 as crate::Chars
 pub struct Iso8859_7;
 
 impl Iso8859_7 {
-
     /// Create a new ISO-8859-7 encoding instance.
     #[inline]
     #[must_use]
@@ -201,11 +203,11 @@ impl crate::Charset for Iso8859_7 {
             "greek8",
             "csisolatingreek",
             "iso_8859-7:1987",
-            
             // code pages
-            "cp813", "ibm813",
-            "cp28597", "windows-28597",
-
+            "cp813",
+            "ibm813",
+            "cp28597",
+            "windows-28597",
             // other
             "iso8859-7",
             "iso88597",

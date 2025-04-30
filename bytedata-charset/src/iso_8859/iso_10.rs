@@ -3,7 +3,7 @@ use crate::ascii7_compat::AsciiCompatible;
 /// The ISO-8859-10 charset.
 const ISO_8859_10_CHARSET: [char; 128] = {
     let mut charset = super::ISO_8859_1_CHARSET;
-    
+
     charset[0xA1 & 0x7F] = '\u{0104}';
     charset[0xA2 & 0x7F] = '\u{0112}';
     charset[0xA3 & 0x7F] = '\u{0122}';
@@ -64,11 +64,14 @@ const ISO_8859_10_CHARSET: [char; 128] = {
 pub static ISO_8859_10: Iso8859_10 = Iso8859_10::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_10 as crate::Charset>::CHARSET_NAME, &ISO_8859_10_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_10 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_10_CHARSET,
+);
 
 /// An encoding for ISO-8859-10.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -76,7 +79,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_10 as crate::Char
 pub struct Iso8859_10;
 
 impl Iso8859_10 {
-
     /// Create a new ISO-8859-10 encoding instance.
     #[inline]
     #[must_use]
@@ -148,11 +150,11 @@ impl crate::Charset for Iso8859_10 {
             "l6",
             "csisolatin6",
             "iso_8859-10:1992",
-            
             // code pages
-            "cp920", "ibm920",
-            "cp28599", "windows-28599",
-
+            "cp920",
+            "ibm920",
+            "cp28599",
+            "windows-28599",
             // other
             "iso8859-10",
             "iso885910",

@@ -1,4 +1,3 @@
-
 /// The endianness of the charset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]

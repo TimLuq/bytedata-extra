@@ -149,11 +149,14 @@ const X_MAC_CYRILLIC_CHARSET: [char; 128] = {
 pub static X_MAC_CYRILLIC: XMacCyrillic = XMacCyrillic::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<XMacCyrillic as crate::Charset>::CHARSET_NAME, &X_MAC_CYRILLIC_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <XMacCyrillic as crate::Charset>::CHARSET_NAME,
+    &X_MAC_CYRILLIC_CHARSET,
+);
 
 /// An encoding for x-mac-cyrillic.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -161,7 +164,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<XMacCyrillic as crate::Ch
 pub struct XMacCyrillic;
 
 impl XMacCyrillic {
-
     /// Create a new x-mac-cyrillic encoding instance.
     #[inline]
     #[must_use]

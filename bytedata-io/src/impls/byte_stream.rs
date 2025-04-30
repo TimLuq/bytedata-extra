@@ -1,5 +1,5 @@
-use core::task::{Waker, RawWaker};
 use alloc::{sync::Arc, vec::Vec};
+use core::task::{RawWaker, Waker};
 
 use async_lock::{Mutex, MutexGuardArc};
 

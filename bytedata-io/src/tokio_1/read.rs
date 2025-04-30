@@ -66,9 +66,11 @@ impl<T: AsyncRead> crate::ByteDataSource<'static> for TokioRead<T> {
     }
 }
 
-
 impl<T: AsyncRead> crate::ByteDataSourceAsync<'static> for TokioRead<T> {
-    fn poll_fill(self: core::pin::Pin<&mut Self>, ctx: &mut core::task::Context<'_>) -> core::task::Poll<Result<(), crate::Error>> {
+    fn poll_fill(
+        self: core::pin::Pin<&mut Self>,
+        ctx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Result<(), crate::Error>> {
         let this = unsafe { core::pin::Pin::into_inner_unchecked(self) };
         if this.ended {
             return Poll::Ready(Ok(()));
@@ -96,7 +98,7 @@ impl<T: AsyncRead> crate::ByteDataSourceAsync<'static> for TokioRead<T> {
             Poll::Ready(Err(e)) => return Poll::Ready(Err(crate::Error::Io { io_error: e })),
             Poll::Ready(Ok(_)) => (),
         }
-        
+
         if this.tmpbuf.is_empty() {
             this.ended = true;
             return Poll::Ready(Ok(()));

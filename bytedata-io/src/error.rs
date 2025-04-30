@@ -1,4 +1,3 @@
-
 #[non_exhaustive]
 pub enum Error {
     EndOfData,

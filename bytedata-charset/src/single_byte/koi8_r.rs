@@ -150,11 +150,12 @@ const KOI8_R_CHARSET: [char; 128] = {
 pub static KOI8_R: Koi8R = Koi8R::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Koi8R as crate::Charset>::CHARSET_NAME, &KOI8_R_CHARSET);
+const ENCODER: AsciiCompatible =
+    AsciiCompatible::new(<Koi8R as crate::Charset>::CHARSET_NAME, &KOI8_R_CHARSET);
 
 /// An encoding for KOI8-R.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -162,7 +163,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Koi8R as crate::Charset>:
 pub struct Koi8R;
 
 impl Koi8R {
-
     /// Create a new KOI8-R encoding instance.
     #[inline]
     #[must_use]
@@ -229,11 +229,11 @@ impl crate::Charset for Koi8R {
             // IANA
             Self::CHARSET_NAME,
             "cskoi8r",
-            
             // code pages
-            "cp20866", "windows-20866",
-            "cp878", "ibm878",
-
+            "cp20866",
+            "windows-20866",
+            "cp878",
+            "ibm878",
             // other
             "koi",
             "koi8",

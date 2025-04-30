@@ -278,17 +278,17 @@ const IBM866_CHARSET: [char; 256] = {
     charset
 };
 
-
 /// An encoding for ISO-8859-4.
 #[cfg_attr(docsrs, doc(cfg(feature = "ibm866")))]
 pub static IBM866: Ibm866 = Ibm866::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: SingleByteEncoding = SingleByteEncoding::new(<Ibm866 as crate::Charset>::CHARSET_NAME, &IBM866_CHARSET);
+const ENCODER: SingleByteEncoding =
+    SingleByteEncoding::new(<Ibm866 as crate::Charset>::CHARSET_NAME, &IBM866_CHARSET);
 
 /// An encoding for ISO-8859-4.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -296,7 +296,6 @@ const ENCODER: SingleByteEncoding = SingleByteEncoding::new(<Ibm866 as crate::Ch
 pub struct Ibm866;
 
 impl Ibm866 {
-
     /// Create a new ISO-8859-4 encoding instance.
     #[inline]
     #[must_use]

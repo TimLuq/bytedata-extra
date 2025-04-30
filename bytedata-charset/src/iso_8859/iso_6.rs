@@ -5,16 +5,16 @@ const ISO_8859_6_CHARSET: [char; 128] = {
     let mut charset = super::ISO_8859_1_CHARSET;
 
     charset[0xA0 & 0x7F] = '\u{00A0}';
-    
+
     charset[0xA4 & 0x7F] = '\u{00A4}';
-    
+
     charset[0xAC & 0x7F] = '\u{060C}';
     charset[0xAD & 0x7F] = '\u{00AD}';
-    
+
     charset[0xBB & 0x7F] = '\u{061B}';
-    
+
     charset[0xBF & 0x7F] = '\u{061F}';
-    
+
     charset[0xC1 & 0x7F] = '\u{0621}';
     charset[0xC2 & 0x7F] = '\u{0622}';
     charset[0xC3 & 0x7F] = '\u{0623}';
@@ -41,7 +41,7 @@ const ISO_8859_6_CHARSET: [char; 128] = {
     charset[0xD8 & 0x7F] = '\u{0638}';
     charset[0xD9 & 0x7F] = '\u{0639}';
     charset[0xDA & 0x7F] = '\u{063A}';
-    
+
     charset[0xE0 & 0x7F] = '\u{0640}';
     charset[0xE1 & 0x7F] = '\u{0641}';
     charset[0xE2 & 0x7F] = '\u{0642}';
@@ -71,11 +71,14 @@ const ISO_8859_6_CHARSET: [char; 128] = {
 pub static ISO_8859_6: Iso8859_6 = Iso8859_6::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_6 as crate::Charset>::CHARSET_NAME, &ISO_8859_6_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_6 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_6_CHARSET,
+);
 
 /// An encoding for ISO-8859-6.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -83,7 +86,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_6 as crate::Chars
 pub struct Iso8859_6;
 
 impl Iso8859_6 {
-
     /// Create a new ISO-8859-6 encoding instance.
     #[inline]
     #[must_use]
@@ -156,11 +158,11 @@ impl crate::Charset for Iso8859_6 {
             "ecma-114",
             "asmo-708",
             "iso_8859-6:1987",
-            
             // code pages
-            "cp1089", "ibm1089",
-            "cp28596", "windows-28596",
-
+            "cp1089",
+            "ibm1089",
+            "cp28596",
+            "windows-28596",
             // other
             "iso8859-6",
             "iso88596",

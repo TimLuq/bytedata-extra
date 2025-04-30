@@ -1,9 +1,8 @@
-
 //! ## ISO-8859 Character Encodings
-//! 
+//!
 //! The ISO-8859 character encodings are a series of 8-bit character encodings for writing in Latin scripts.
 //! The encodings are designed to be compatible with ASCII-7, but also include additional characters for writing in various European languages.
-//! 
+//!
 //! Any new project should use UTF-8 instead of these encodings, but they are still in use in many legacy systems.
 //! As such, this library provides support for these encodings.
 //! When writing in a context which defines which encoding is used, such as XML or HTML, it is recommended to always use UTF-8 instead of ISO-8859 and only use these charsets to read external or existing data.

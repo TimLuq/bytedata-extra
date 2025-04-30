@@ -9,7 +9,6 @@ pub struct TokioBuffered<T> {
     ended: bool,
 }
 
-
 impl<T: AsyncBufRead> TokioBuffered<T> {
     #[inline]
     pub const fn new(inner: T) -> Self {
@@ -66,7 +65,10 @@ impl<T: AsyncBufRead> crate::ByteDataSource<'static> for TokioBuffered<T> {
 }
 
 impl<T: AsyncBufRead> crate::ByteDataSourceAsync<'static> for TokioBuffered<T> {
-    fn poll_fill(self: core::pin::Pin<&mut Self>, ctx: &mut core::task::Context<'_>) -> core::task::Poll<Result<(), crate::Error>> {
+    fn poll_fill(
+        self: core::pin::Pin<&mut Self>,
+        ctx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Result<(), crate::Error>> {
         let this = unsafe { core::pin::Pin::into_inner_unchecked(self) };
         if this.ended {
             return Poll::Ready(Ok(()));
@@ -86,7 +88,7 @@ impl<T: AsyncBufRead> crate::ByteDataSourceAsync<'static> for TokioBuffered<T> {
         let len = d.len().min(0xFFFF_FF00);
         let mut buf = bytedata::SharedBytesBuilder::with_capacity(len);
         buf.extend_from_slice(d);
-        
+
         let inner = unsafe { core::pin::Pin::new_unchecked(&mut this.inner) };
         T::consume(inner, len);
 

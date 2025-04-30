@@ -5,7 +5,7 @@ const ISO_8859_8_CHARSET: [char; 128] = {
     let mut charset = super::ISO_8859_1_CHARSET;
 
     charset[0xA0 & 0x7F] = '\u{00A0}';
-    
+
     charset[0xA2 & 0x7F] = '\u{00A2}';
     charset[0xA3 & 0x7F] = '\u{00A3}';
     charset[0xA4 & 0x7F] = '\u{00A4}';
@@ -36,7 +36,7 @@ const ISO_8859_8_CHARSET: [char; 128] = {
     charset[0xBC & 0x7F] = '\u{00BC}';
     charset[0xBD & 0x7F] = '\u{00BD}';
     charset[0xBE & 0x7F] = '\u{00BE}';
-    
+
     charset[0xDF & 0x7F] = '\u{2017}';
 
     charset[0xE0 & 0x7F] = '\u{05D0}';
@@ -55,7 +55,7 @@ const ISO_8859_8_CHARSET: [char; 128] = {
     charset[0xED & 0x7F] = '\u{05DD}';
     charset[0xEE & 0x7F] = '\u{05DE}';
     charset[0xEF & 0x7F] = '\u{05DF}';
-    
+
     charset[0xF0 & 0x7F] = '\u{05E0}';
     charset[0xF1 & 0x7F] = '\u{05E1}';
     charset[0xF2 & 0x7F] = '\u{05E2}';
@@ -67,7 +67,7 @@ const ISO_8859_8_CHARSET: [char; 128] = {
     charset[0xF8 & 0x7F] = '\u{05E8}';
     charset[0xF9 & 0x7F] = '\u{05E9}';
     charset[0xFA & 0x7F] = '\u{05EA}';
-    
+
     charset[0xFD & 0x7F] = '\u{200E}';
     charset[0xFE & 0x7F] = '\u{200F}';
 
@@ -79,11 +79,14 @@ const ISO_8859_8_CHARSET: [char; 128] = {
 pub static ISO_8859_8: Iso8859_8 = Iso8859_8::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_8 as crate::Charset>::CHARSET_NAME, &ISO_8859_8_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_8 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_8_CHARSET,
+);
 
 /// An encoding for ISO-8859-8.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -91,7 +94,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_8 as crate::Chars
 pub struct Iso8859_8;
 
 impl Iso8859_8 {
-
     /// Create a new ISO-8859-8 encoding instance.
     #[inline]
     #[must_use]
@@ -162,10 +164,9 @@ impl crate::Charset for Iso8859_8 {
             "hebrew",
             "csisolatinhebrew",
             "iso_8859-8:1988",
-            
             // code pages
-            "cp916", "ibm916",
-
+            "cp916",
+            "ibm916",
             // other
             "iso-8859-8-e",
             "iso8859-8",

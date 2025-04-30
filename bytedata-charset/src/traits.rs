@@ -1,9 +1,7 @@
-
-
 /// A reference to a charset.
 pub trait CharsetRef {
     /// The name of the charset.
-    /// 
+    ///
     /// This method can be overridden to provide a different name than the internal name dependant on the specifics of `self`.
     fn charset_name(&self) -> &'static str;
 
@@ -27,12 +25,12 @@ impl<'a> CharsetRef for &'a (dyn CharsetRef + 'a) {
 pub trait Charset {
     /// The internal name of the charset.
     /// If this is the actual charset name then the [`charset_name`] method can fall back on the default implementation.
-    /// 
+    ///
     /// [`charset_name`]: Charset::charset_name
     const CHARSET_NAME: &'static str;
 
     /// The name of the charset.
-    /// 
+    ///
     /// This method can be overridden to provide a different name than the internal name dependant on the specifics of `self`.
     #[inline]
     #[must_use]
@@ -41,7 +39,7 @@ pub trait Charset {
     }
 
     /// The name of the charset.
-    /// 
+    ///
     /// This method can be overridden to provide a different name than the internal name dependant on the specifics of `self`.
     #[inline]
     #[must_use]

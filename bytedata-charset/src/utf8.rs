@@ -1,4 +1,3 @@
-
 /// An encoding for UTF-8.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[non_exhaustive]
@@ -8,7 +7,6 @@ pub struct Utf8Encoding;
 pub static UTF8: Utf8Encoding = Utf8Encoding::new();
 
 impl Utf8Encoding {
-
     /// Create a new UTF-8 encoding instance.
     #[inline]
     #[must_use]
@@ -50,7 +48,7 @@ impl Utf8Encoding {
 
         fallback(bytes)
     }
-    
+
     /// Encode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -107,7 +105,6 @@ impl crate::Charset for Utf8Encoding {
             // IANA
             Self::CHARSET_NAME,
             "csutf8",
-
             // extra
             "utf8",
             "unicode-1-1-utf-8",

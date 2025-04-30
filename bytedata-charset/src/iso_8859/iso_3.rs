@@ -12,7 +12,7 @@ const ISO_8859_3_CHARSET: [char; 128] = {
     charset[0xAB & 0x7F] = '\u{011E}';
     charset[0xAC & 0x7F] = '\u{0134}';
     charset[0xAF & 0x7F] = '\u{017B}';
-    
+
     charset[0xB1 & 0x7F] = '\u{0127}';
     charset[0xB6 & 0x7F] = '\u{0125}';
     charset[0xB9 & 0x7F] = '\u{0131}';
@@ -47,11 +47,14 @@ pub static ISO_8859_3: Iso8859_3 = Iso8859_3::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
 #[cfg_attr(docsrs, doc(cfg(feature = "iso-8859-3")))]
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_3 as crate::Charset>::CHARSET_NAME, &ISO_8859_3_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_3 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_3_CHARSET,
+);
 
 /// An encoding for ISO-8859-3.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -59,7 +62,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_3 as crate::Chars
 pub struct Iso8859_3;
 
 impl Iso8859_3 {
-
     /// Create a new ISO-8859-3 encoding instance.
     #[inline]
     #[must_use]
@@ -131,11 +133,11 @@ impl crate::Charset for Iso8859_3 {
             "latin3",
             "l3",
             "iso_8859-3:1988",
-
             // code pages
-            "cp913", "ibm913",
-            "cp28593", "windows-28593",
-
+            "cp913",
+            "ibm913",
+            "cp28593",
+            "windows-28593",
             // other
             "iso8859-3",
             "iso88593",

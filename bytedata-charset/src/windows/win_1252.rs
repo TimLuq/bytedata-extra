@@ -45,11 +45,14 @@ pub(super) const WIN_1252_CHARSET: [char; 128] = {
 pub static WINDOWS_1252: Windows1252 = Windows1252::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows1252 as crate::Charset>::CHARSET_NAME, &WIN_1252_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Windows1252 as crate::Charset>::CHARSET_NAME,
+    &WIN_1252_CHARSET,
+);
 
 /// An encoding for windows-1252.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -57,7 +60,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows1252 as crate::Cha
 pub struct Windows1252;
 
 impl Windows1252 {
-
     /// Create a new windows-1252 encoding instance.
     #[inline]
     #[must_use]
@@ -124,15 +126,26 @@ impl crate::Charset for Windows1252 {
             // IANA
             Self::CHARSET_NAME,
             "cswindows1252",
-            
             // code pages
-            "cp1252", "x-cp1252", "ibm1252",
-
+            "cp1252",
+            "x-cp1252",
+            "ibm1252",
             // inherit some aliases from us-ascii
-            "ansi_x3.4-1968", "ascii", "us-ascii",
-
+            "ansi_x3.4-1968",
+            "ascii",
+            "us-ascii",
             // inherit most aliases from iso-8859-1
-            "cp819", "csisolatin1", "ibm819", "iso-8859-1", "iso-ir-100", "iso8859-1", "iso88591", "iso_8859-1", "iso_8859-1:1987", "l1", "latin1",
+            "cp819",
+            "csisolatin1",
+            "ibm819",
+            "iso-8859-1",
+            "iso-ir-100",
+            "iso8859-1",
+            "iso88591",
+            "iso_8859-1",
+            "iso_8859-1:1987",
+            "l1",
+            "latin1",
         ]
     }
 }

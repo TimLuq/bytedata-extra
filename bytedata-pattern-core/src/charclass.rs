@@ -1,6 +1,5 @@
 use crate::test_exec::{ExecFlag, ExecResult, TestExec};
 
-
 #[derive(Clone, Copy)]
 #[non_exhaustive]
 pub enum CharacterClass {
@@ -101,7 +100,11 @@ const fn is_non_nl_ws(chr: char) -> bool {
 #[inline(always)]
 #[must_use]
 pub(crate) const fn is_full_ws(chr: char) -> bool {
-    is_non_nl_ws(chr) || (chr >= '\n' && chr <= '\r') || chr == '\u{0085}' || chr == '\u{2028}' || chr == '\u{2029}'
+    is_non_nl_ws(chr)
+        || (chr >= '\n' && chr <= '\r')
+        || chr == '\u{0085}'
+        || chr == '\u{2028}'
+        || chr == '\u{2029}'
 }
 
 #[inline(always)]
@@ -166,7 +169,8 @@ impl CharacterClass {
         if self.check_char(chr) {
             let len = len as usize;
             let new_chunk_len = exec.chunk.len() - len;
-            exec.chunk = unsafe { core::slice::from_raw_parts(exec.chunk.as_ptr().add(len), new_chunk_len) };
+            exec.chunk =
+                unsafe { core::slice::from_raw_parts(exec.chunk.as_ptr().add(len), new_chunk_len) };
             exec.offset += len;
             if CharacterClass::Word.check_char(chr) {
                 exec.flags.set(ExecFlag::PrevWord);

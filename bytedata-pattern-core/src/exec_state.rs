@@ -1,6 +1,5 @@
 use crate::flags::U8Flags;
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub(crate) enum ExecResult {

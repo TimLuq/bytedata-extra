@@ -19,7 +19,7 @@ pub struct DecodeStream<'a, C, S> {
     invalid: DecodeInvalid,
 }
 
-impl<C: core::fmt::Debug, S>  core::fmt::Debug for DecodeStream<'_, C, S> {
+impl<C: core::fmt::Debug, S> core::fmt::Debug for DecodeStream<'_, C, S> {
     #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("DecodeStream")
@@ -65,7 +65,12 @@ impl<C: CharsetDecoding, S> DecodeStream<'_, C, S> {
 }
 
 #[inline]
-fn read_buffer<'a>(chunk_buffer_input_n: &mut usize, chunk_buffer_input: &mut [u8], charset_max_bytes: u16, buffer: &bytedata::ByteQueue<'a>) -> bytedata::ByteData<'a> {
+fn read_buffer<'a>(
+    chunk_buffer_input_n: &mut usize,
+    chunk_buffer_input: &mut [u8],
+    charset_max_bytes: u16,
+    buffer: &bytedata::ByteQueue<'a>,
+) -> bytedata::ByteData<'a> {
     let mut input_n = *chunk_buffer_input_n;
     if input_n != 0 {
         let end = (charset_max_bytes as usize).min(chunk_buffer_input.len());
@@ -104,16 +109,25 @@ where
         let mut chunk_buffer_input_n = 0;
         loop {
             loop {
-                let inner_buf = read_buffer(&mut chunk_buffer_input_n, &mut chunk_buffer_input, self.charset.size_hint().1, &self.buffer);
+                let inner_buf = read_buffer(
+                    &mut chunk_buffer_input_n,
+                    &mut chunk_buffer_input,
+                    self.charset.size_hint().1,
+                    &self.buffer,
+                );
                 match self.charset.decode(inner_buf.as_slice()) {
                     crate::DecodeResult::Char(ch, len) => {
                         core::mem::drop(self.buffer.drain(..len as usize));
-                        let u8_len = ch.encode_utf8(&mut chunk_buffer_output[chunk_buffer_output_n..]).len();
+                        let u8_len = ch
+                            .encode_utf8(&mut chunk_buffer_output[chunk_buffer_output_n..])
+                            .len();
                         chunk_buffer_output_n += u8_len;
                         if chunk_buffer_output_n <= 10 {
                             continue;
                         }
-                        let chunk = bytedata::ByteData::from_chunk_slice(&chunk_buffer_output[..chunk_buffer_output_n]);
+                        let chunk = bytedata::ByteData::from_chunk_slice(
+                            &chunk_buffer_output[..chunk_buffer_output_n],
+                        );
                         // SAFETY: the buffer is filled with valid utf-8 data
                         let chunk = unsafe { bytedata::StringData::from_bytedata_unchecked(chunk) };
                         return Some(Ok(chunk));
@@ -123,14 +137,19 @@ where
                             DecodeInvalid::Replace => {
                                 core::mem::drop(self.buffer.drain(..len as usize));
                                 chunk_buffer_input_n = 0;
-                                let u8_len = '\u{FFFD}'.encode_utf8(&mut chunk_buffer_output[chunk_buffer_output_n..]).len();
+                                let u8_len = '\u{FFFD}'
+                                    .encode_utf8(&mut chunk_buffer_output[chunk_buffer_output_n..])
+                                    .len();
                                 chunk_buffer_output_n += u8_len;
                                 if chunk_buffer_output_n <= 10 {
                                     continue;
                                 }
-                                let chunk = bytedata::ByteData::from_chunk_slice(&chunk_buffer_output[..chunk_buffer_output_n]);
+                                let chunk = bytedata::ByteData::from_chunk_slice(
+                                    &chunk_buffer_output[..chunk_buffer_output_n],
+                                );
                                 // SAFETY: the buffer is filled with valid utf-8 data
-                                let chunk = unsafe { bytedata::StringData::from_bytedata_unchecked(chunk) };
+                                let chunk =
+                                    unsafe { bytedata::StringData::from_bytedata_unchecked(chunk) };
                                 return Some(Ok(chunk));
                             }
                             DecodeInvalid::Ignore => {
@@ -145,9 +164,12 @@ where
                     }
                     crate::DecodeResult::Utf8(len) => {
                         if chunk_buffer_output_n != 0 {
-                            let chunk = bytedata::ByteData::from_chunk_slice(&chunk_buffer_output[..chunk_buffer_output_n]);
+                            let chunk = bytedata::ByteData::from_chunk_slice(
+                                &chunk_buffer_output[..chunk_buffer_output_n],
+                            );
                             // SAFETY: the buffer is filled with valid utf-8 data
-                            let chunk = unsafe { bytedata::StringData::from_bytedata_unchecked(chunk) };
+                            let chunk =
+                                unsafe { bytedata::StringData::from_bytedata_unchecked(chunk) };
                             return Some(Ok(chunk));
                         }
                         #[expect(clippy::cast_possible_truncation)]
@@ -159,7 +181,9 @@ where
                             inner_buf.into_sliced(..len)
                         };
                         // SAFETY: the buffer is filled with valid utf-8 data
-                        return Some(Ok(unsafe { bytedata::StringData::from_bytedata_unchecked(inner_buf) }));
+                        return Some(Ok(unsafe {
+                            bytedata::StringData::from_bytedata_unchecked(inner_buf)
+                        }));
                     }
                     crate::DecodeResult::Incomplete | crate::DecodeResult::Empty => {
                         break;
@@ -168,7 +192,9 @@ where
             }
 
             if chunk_buffer_output_n != 0 {
-                let chunk = bytedata::ByteData::from_chunk_slice(&chunk_buffer_output[..chunk_buffer_output_n]);
+                let chunk = bytedata::ByteData::from_chunk_slice(
+                    &chunk_buffer_output[..chunk_buffer_output_n],
+                );
                 // SAFETY: the buffer is filled with valid utf-8 data
                 let chunk = unsafe { bytedata::StringData::from_bytedata_unchecked(chunk) };
                 return Some(Ok(chunk));
@@ -191,9 +217,9 @@ where
 #[cfg(feature = "std")]
 pub trait DecodeStreamRead {
     /// Read the next chunk of data from the stream and decode it into the buffer.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// - `std::io::ErrorKind::UnexpectedEof` → if the stream ends before the next character is fully read.
     /// - `*` → if the input stream returns an error.
     fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> std::io::Result<&'a str>;
@@ -210,7 +236,12 @@ impl<C: CharsetDecoding, S: std::io::Read> DecodeStreamRead for DecodeStream<'_,
             let fail: std::io::ErrorKind;
             let mut chunk_buffer_n = 0;
             loop {
-                let inner_buf = read_buffer(&mut chunk_buffer_n, &mut chunk_buffer, self.charset.size_hint().1, &self.buffer);
+                let inner_buf = read_buffer(
+                    &mut chunk_buffer_n,
+                    &mut chunk_buffer,
+                    self.charset.size_hint().1,
+                    &self.buffer,
+                );
                 match self.charset.decode(inner_buf.as_slice()) {
                     crate::DecodeResult::Char(ch, len) => {
                         let u8len = ch.len_utf8();
@@ -247,9 +278,14 @@ impl<C: CharsetDecoding, S: std::io::Read> DecodeStreamRead for DecodeStream<'_,
                             DecodeInvalid::Error => {
                                 if t_offset != 0 {
                                     // SAFETY: the buffer is filled with valid utf-8 data up to `t_offset`
-                                    return Ok(unsafe { core::str::from_utf8_unchecked(&buf[..t_offset]) });
+                                    return Ok(unsafe {
+                                        core::str::from_utf8_unchecked(&buf[..t_offset])
+                                    });
                                 }
-                                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid character"));
+                                return Err(std::io::Error::new(
+                                    std::io::ErrorKind::InvalidData,
+                                    "invalid character",
+                                ));
                             }
                         }
                     }
@@ -283,20 +319,23 @@ impl<C: CharsetDecoding, S: std::io::Read> DecodeStreamRead for DecodeStream<'_,
                         core::mem::drop(self.buffer.drain(..len));
                         chunk_buffer_n = 0;
                         continue;
-                    },
+                    }
                     crate::DecodeResult::Empty => {
                         fail = std::io::ErrorKind::BrokenPipe;
                         break;
                     }
                     crate::DecodeResult::Incomplete => {
-                        if chunk_buffer_n == 0 && self.buffer.len() > inner_buf.len() && inner_buf.len() < chunk_buffer.len() {
+                        if chunk_buffer_n == 0
+                            && self.buffer.len() > inner_buf.len()
+                            && inner_buf.len() < chunk_buffer.len()
+                        {
                             chunk_buffer_n = inner_buf.len();
                             chunk_buffer[..chunk_buffer_n].copy_from_slice(inner_buf.as_slice());
                             continue;
                         }
                         fail = std::io::ErrorKind::UnexpectedEof;
                         break;
-                    },
+                    }
                 }
             }
 
@@ -327,11 +366,14 @@ impl<C: CharsetDecoding, S: std::io::Read> DecodeStreamRead for DecodeStream<'_,
                 if fail == std::io::ErrorKind::BrokenPipe {
                     // encoder returned "empty", but we have some bytes left
                     // for now, we just return the empty string
-                    
+
                     // SAFETY: the buffer is empty, so we can return an empty string
                     return Ok(unsafe { core::str::from_utf8_unchecked(&buf[..0]) });
                 }
-                return Err(std::io::Error::new(fail, "got to end of stream while decoding characters"));
+                return Err(std::io::Error::new(
+                    fail,
+                    "got to end of stream while decoding characters",
+                ));
             }
 
             // if the charset is single-byte or var-byte, we can test if the read data starts with something utf-8 compatible

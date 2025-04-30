@@ -4,7 +4,7 @@ mod big5_cp;
 ///
 /// Use [`UTF-8`] or [`UTF-16`] instead if possible.
 /// (GB18030 is an encoding backward compatible with BIG5 but support a much larger mapping against Unicode.)
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 /// [`UTF-16`]: crate::Utf16Encoding
 /// [`GB18030`]: crate::multi_byte::Gb18030Encoding
@@ -19,7 +19,6 @@ pub struct Big5Encoding;
 pub static BIG5: Big5Encoding = Big5Encoding::new();
 
 impl Big5Encoding {
-
     /// Create a new BIG5 encoding instance.
     #[inline]
     #[must_use]
@@ -86,7 +85,6 @@ impl crate::Charset for Big5Encoding {
             // IANA
             Self::CHARSET_NAME,
             "csbig5",
-
             // other
             "cn-big5",
             "x-x-big5",
@@ -158,7 +156,10 @@ fn gen_index() {
                 let codepoint = u32::from_str_radix(&codepoint[2..], 16).unwrap();
 
                 while prev_pointer != 0 && prev_pointer + 1 != pointer {
-                    assert!(prev_pointer < pointer, "expected: {prev_pointer} < {pointer}");
+                    assert!(
+                        prev_pointer < pointer,
+                        "expected: {prev_pointer} < {pointer}"
+                    );
                     write!(outfile, "    '\\0',\n").unwrap();
                     prev_pointer += 1;
                 }

@@ -1,6 +1,5 @@
-
 /// An encoding for ASCII-7.
-/// 
+///
 /// In general, you can use the UTF-8 encoding instead of ASCII-7.
 /// The only reason to use ASCII-7 is if you need to *ensure* that the text is ASCII-only.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -11,14 +10,13 @@ pub struct Ascii7Encoding;
 pub static ASCII7: Ascii7Encoding = Ascii7Encoding::new();
 
 impl Ascii7Encoding {
-
     /// Create a new ASCII-7 encoding instance.
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
         Self
     }
-    
+
     /// Decode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -139,7 +137,9 @@ impl Ascii7Encoding {
             // SAFETY: The pointer is valid and the length is correct, and avx512f has been checked.
             let res = unsafe { ascii7_decode_avx512(bytes_ptr, maxlen, 0) };
             match res {
-                crate::DecodeResult::Utf8(n) if n == maxlen as u64 => return crate::detect::DetectionResult::Tentative,
+                crate::DecodeResult::Utf8(n) if n == maxlen as u64 => {
+                    return crate::detect::DetectionResult::Tentative
+                }
                 _ => return crate::detect::DetectionResult::Irrelevant,
             }
         }
@@ -150,7 +150,9 @@ impl Ascii7Encoding {
             // SAFETY: The pointer is valid and the length is correct, and avx has been checked.
             let res = unsafe { ascii7_decode_avx(bytes_ptr, maxlen, 0) };
             match res {
-                crate::DecodeResult::Utf8(n) if n == maxlen as u64 => return crate::detect::DetectionResult::Tentative,
+                crate::DecodeResult::Utf8(n) if n == maxlen as u64 => {
+                    return crate::detect::DetectionResult::Tentative
+                }
                 _ => return crate::detect::DetectionResult::Irrelevant,
             }
         }
@@ -184,7 +186,18 @@ impl crate::Charset for Ascii7Encoding {
 
     #[inline]
     fn charset_alias(&self) -> &[&'static str] {
-        &["us-ascii", "iso-ir-6", "ansi_x3.4-1968", "ansi_x3.4-1986", "iso_646.irv:1991", "iso646-us", "us", "ibm367", "cp367", "csascii"]
+        &[
+            "us-ascii",
+            "iso-ir-6",
+            "ansi_x3.4-1968",
+            "ansi_x3.4-1986",
+            "iso_646.irv:1991",
+            "iso646-us",
+            "us",
+            "ibm367",
+            "cp367",
+            "csascii",
+        ]
     }
 }
 
@@ -228,7 +241,11 @@ const fn detect_const_inner(bytes: &[u8]) -> crate::detect::DetectionResult {
     crate::detect::DetectionResult::Tentative
 }
 
-const unsafe fn ascii7_encode_const(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::EncodeResult {
+const unsafe fn ascii7_encode_const(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::EncodeResult {
     while maxlen != 0 {
         let byte = val.read();
         if byte < 128 {
@@ -250,28 +267,37 @@ const unsafe fn ascii7_encode_const(mut val: *const u8, mut maxlen: usize, mut u
     crate::EncodeResult::Utf8(utflen as u64)
 }
 
-
-
 #[cfg(all(target_arch = "x86_64", feature = "avx512f"))]
 #[inline]
 #[expect(clippy::redundant_pub_crate)]
-pub(crate) unsafe fn ascii7_encode_avx512(val: *const u8, maxlen: usize, utflen: usize) -> crate::EncodeResult {
+pub(crate) unsafe fn ascii7_encode_avx512(
+    val: *const u8,
+    maxlen: usize,
+    utflen: usize,
+) -> crate::EncodeResult {
     #[cfg(feature = "avx512bw")]
     if is_x86_feature_detected!("avx512bw") {
         return ascii7_encode_avx512bw(val, maxlen, utflen);
     }
     ascii7_encode_avx512f(val, maxlen, utflen)
 }
-    
+
 /// Encode characters from the given bytes.
 #[cfg(all(target_arch = "x86_64", feature = "avx512bw"))]
 #[target_feature(enable = "avx512bw", enable = "avx512f")]
-unsafe fn ascii7_encode_avx512bw(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::EncodeResult {
+unsafe fn ascii7_encode_avx512bw(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::EncodeResult {
     loop {
         #[expect(clippy::cast_ptr_alignment)]
         let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
         #[expect(clippy::cast_possible_wrap)]
-        let masked = core::arch::x86_64::_mm512_test_epi8_mask(data, core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8));
+        let masked = core::arch::x86_64::_mm512_test_epi8_mask(
+            data,
+            core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8),
+        );
         let zc = masked.leading_zeros() as usize;
         utflen += zc;
         if zc == 64 {
@@ -299,12 +325,19 @@ unsafe fn ascii7_encode_avx512bw(mut val: *const u8, mut maxlen: usize, mut utfl
 /// Encode characters from the given bytes.
 #[cfg(all(target_arch = "x86_64", feature = "avx512f"))]
 #[target_feature(enable = "avx512f")]
-unsafe fn ascii7_encode_avx512f(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::EncodeResult {
+unsafe fn ascii7_encode_avx512f(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::EncodeResult {
     loop {
         #[expect(clippy::cast_ptr_alignment)]
         let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
         #[expect(clippy::cast_possible_wrap)]
-        let masked = core::arch::x86_64::_mm512_test_epi32_mask(data, core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8));
+        let masked = core::arch::x86_64::_mm512_test_epi32_mask(
+            data,
+            core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8),
+        );
         let zc = (masked.leading_zeros() as usize) << 2;
         utflen += zc;
         if zc == 64 {
@@ -332,16 +365,20 @@ unsafe fn ascii7_encode_avx512f(mut val: *const u8, mut maxlen: usize, mut utfle
         return crate::EncodeResult::Empty;
     }
 }
-    
+
 /// Encode characters from the given bytes.
 #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), feature = "avx"))]
 #[target_feature(enable = "avx")]
 #[expect(clippy::redundant_pub_crate)]
-pub(crate) unsafe fn ascii7_encode_avx(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::EncodeResult {
+pub(crate) unsafe fn ascii7_encode_avx(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::EncodeResult {
     #[cfg(target_arch = "x86")]
-    use core::arch::x86::{__m256i, _mm256_loadu_si256, _mm256_testc_si256, _mm256_set1_epi8};
+    use core::arch::x86::{__m256i, _mm256_loadu_si256, _mm256_set1_epi8, _mm256_testc_si256};
     #[cfg(target_arch = "x86_64")]
-    use core::arch::x86_64::{__m256i, _mm256_loadu_si256, _mm256_testc_si256, _mm256_set1_epi8};
+    use core::arch::x86_64::{__m256i, _mm256_loadu_si256, _mm256_set1_epi8, _mm256_testc_si256};
 
     loop {
         #[expect(clippy::cast_ptr_alignment)]
@@ -367,16 +404,20 @@ pub(crate) unsafe fn ascii7_encode_avx(mut val: *const u8, mut maxlen: usize, mu
         return crate::EncodeResult::Empty;
     }
 }
-    
+
 /// Encode characters from the given bytes.
 #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), feature = "avx"))]
 #[target_feature(enable = "avx")]
 #[expect(clippy::redundant_pub_crate)]
-pub(crate) unsafe fn ascii7_decode_avx(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::DecodeResult {
+pub(crate) unsafe fn ascii7_decode_avx(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::DecodeResult {
     #[cfg(target_arch = "x86")]
-    use core::arch::x86::{__m256i, _mm256_loadu_si256, _mm256_testc_si256, _mm256_set1_epi8};
+    use core::arch::x86::{__m256i, _mm256_loadu_si256, _mm256_set1_epi8, _mm256_testc_si256};
     #[cfg(target_arch = "x86_64")]
-    use core::arch::x86_64::{__m256i, _mm256_loadu_si256, _mm256_testc_si256, _mm256_set1_epi8};
+    use core::arch::x86_64::{__m256i, _mm256_loadu_si256, _mm256_set1_epi8, _mm256_testc_si256};
 
     loop {
         #[expect(clippy::cast_ptr_alignment)]
@@ -400,23 +441,34 @@ pub(crate) unsafe fn ascii7_decode_avx(mut val: *const u8, mut maxlen: usize, mu
 #[cfg(all(target_arch = "x86_64", feature = "avx512f"))]
 #[inline]
 #[expect(clippy::redundant_pub_crate)]
-pub(crate) unsafe fn ascii7_decode_avx512(val: *const u8, maxlen: usize, utflen: usize) -> crate::DecodeResult {
+pub(crate) unsafe fn ascii7_decode_avx512(
+    val: *const u8,
+    maxlen: usize,
+    utflen: usize,
+) -> crate::DecodeResult {
     #[cfg(feature = "avx512bw")]
     if is_x86_feature_detected!("avx512bw") {
         return ascii7_decode_avx512bw(val, maxlen, utflen);
     }
     ascii7_decode_avx512f(val, maxlen, utflen)
 }
-    
+
 /// Encode characters from the given bytes.
 #[cfg(all(target_arch = "x86_64", feature = "avx512bw"))]
 #[target_feature(enable = "avx512bw", enable = "avx512f")]
-unsafe fn ascii7_decode_avx512bw(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::DecodeResult {
+unsafe fn ascii7_decode_avx512bw(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::DecodeResult {
     loop {
         #[expect(clippy::cast_ptr_alignment)]
         let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
         #[expect(clippy::cast_possible_wrap)]
-        let masked = core::arch::x86_64::_mm512_test_epi8_mask(data, core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8));
+        let masked = core::arch::x86_64::_mm512_test_epi8_mask(
+            data,
+            core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8),
+        );
         let zc = masked.leading_zeros() as usize;
         utflen += zc;
         if zc == 64 {
@@ -444,12 +496,19 @@ unsafe fn ascii7_decode_avx512bw(mut val: *const u8, mut maxlen: usize, mut utfl
 /// Encode characters from the given bytes.
 #[cfg(all(target_arch = "x86_64", feature = "avx512f"))]
 #[target_feature(enable = "avx512f")]
-unsafe fn ascii7_decode_avx512f(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::DecodeResult {
+unsafe fn ascii7_decode_avx512f(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::DecodeResult {
     loop {
         #[expect(clippy::cast_ptr_alignment)]
         let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
         #[expect(clippy::cast_possible_wrap)]
-        let masked = core::arch::x86_64::_mm512_test_epi32_mask(data, core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8));
+        let masked = core::arch::x86_64::_mm512_test_epi32_mask(
+            data,
+            core::arch::x86_64::_mm512_set1_epi8(0x80_u8 as i8),
+        );
         let zc = (masked.leading_zeros() as usize) << 2;
         utflen += zc;
         if zc == 64 {
@@ -478,7 +537,11 @@ unsafe fn ascii7_decode_avx512f(mut val: *const u8, mut maxlen: usize, mut utfle
     }
 }
 
-const unsafe fn ascii7_decode_const(mut val: *const u8, mut maxlen: usize, mut utflen: usize) -> crate::DecodeResult {
+const unsafe fn ascii7_decode_const(
+    mut val: *const u8,
+    mut maxlen: usize,
+    mut utflen: usize,
+) -> crate::DecodeResult {
     while maxlen != 0 {
         let byte = val.read();
         if byte < 128 {

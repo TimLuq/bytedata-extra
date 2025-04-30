@@ -3,7 +3,7 @@ use crate::ascii7_compat::AsciiCompatible;
 /// The ISO-8859-13 charset.
 const ISO_8859_13_CHARSET: [char; 128] = {
     let mut charset = super::ISO_8859_1_CHARSET;
-    
+
     charset[0xA1 & 0x7F] = '\u{201D}';
     charset[0xA5 & 0x7F] = '\u{201E}';
     charset[0xA8 & 0x7F] = '\u{00D8}';
@@ -74,11 +74,14 @@ const ISO_8859_13_CHARSET: [char; 128] = {
 pub static ISO_8859_13: Iso8859_13 = Iso8859_13::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_13 as crate::Charset>::CHARSET_NAME, &ISO_8859_13_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_13 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_13_CHARSET,
+);
 
 /// An encoding for ISO-8859-13.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -86,7 +89,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_13 as crate::Char
 pub struct Iso8859_13;
 
 impl Iso8859_13 {
-
     /// Create a new ISO-8859-13 encoding instance.
     #[inline]
     #[must_use]
@@ -153,10 +155,9 @@ impl crate::Charset for Iso8859_13 {
             // IANA
             Self::CHARSET_NAME,
             "csiso885913",
-            
             // code pages
-            "cp28603", "windows-28603",
-
+            "cp28603",
+            "windows-28603",
             // other
             "iso8859-13",
             "iso885913",

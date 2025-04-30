@@ -50,7 +50,7 @@ const ISO_8859_4_CHARSET: [char; 128] = {
     charset[0xEA & 0x7F] = '\u{0119}';
     charset[0xEC & 0x7F] = '\u{0117}';
     charset[0xEF & 0x7F] = '\u{012B}';
-    
+
     charset[0xF0 & 0x7F] = '\u{0111}';
     charset[0xF1 & 0x7F] = '\u{0146}';
     charset[0xF2 & 0x7F] = '\u{014D}';
@@ -68,11 +68,14 @@ const ISO_8859_4_CHARSET: [char; 128] = {
 pub static ISO_8859_4: Iso8859_4 = Iso8859_4::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_4 as crate::Charset>::CHARSET_NAME, &ISO_8859_4_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_4 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_4_CHARSET,
+);
 
 /// An encoding for ISO-8859-4.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -80,7 +83,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_4 as crate::Chars
 pub struct Iso8859_4;
 
 impl Iso8859_4 {
-
     /// Create a new ISO-8859-4 encoding instance.
     #[inline]
     #[must_use]
@@ -152,11 +154,11 @@ impl crate::Charset for Iso8859_4 {
             "latin4",
             "l4",
             "iso_8859-4:1988",
-
             // code pages
-            "cp914", "ibm914",
-            "cp28594", "windows-28594",
-
+            "cp914",
+            "ibm914",
+            "cp28594",
+            "windows-28594",
             // other
             "iso8859-4",
             "iso88594",

@@ -149,11 +149,14 @@ const MACINTOSH_CHARSET: [char; 128] = {
 pub static MACINTOSH: Macintosh = Macintosh::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Macintosh as crate::Charset>::CHARSET_NAME, &MACINTOSH_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Macintosh as crate::Charset>::CHARSET_NAME,
+    &MACINTOSH_CHARSET,
+);
 
 /// An encoding for macintosh.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -161,7 +164,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Macintosh as crate::Chars
 pub struct Macintosh;
 
 impl Macintosh {
-
     /// Create a new macintosh encoding instance.
     #[inline]
     #[must_use]
@@ -229,7 +231,6 @@ impl crate::Charset for Macintosh {
             Self::CHARSET_NAME,
             "csmacintosh",
             "mac",
-
             // other
             "x-mac-roman",
         ]

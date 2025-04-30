@@ -2,7 +2,6 @@ use bytedata::ByteQueue;
 
 use crate::{ByteDataSource, ByteDataSourceAsync, ByteDataSourceSync};
 
-
 impl<'a> ByteDataSource<'a> for ByteQueue<'a> {
     #[inline]
     fn has_ended(&self) -> bool {
@@ -27,7 +26,10 @@ impl<'a> ByteDataSource<'a> for ByteQueue<'a> {
 
 impl<'a> ByteDataSourceAsync<'a> for ByteQueue<'a> {
     #[inline]
-    fn poll_fill(self: core::pin::Pin<&mut Self>, _ctx: &mut core::task::Context<'_>) -> core::task::Poll<Result<(), crate::Error>> {
+    fn poll_fill(
+        self: core::pin::Pin<&mut Self>,
+        _ctx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Result<(), crate::Error>> {
         core::task::Poll::Ready(Ok(()))
     }
 }

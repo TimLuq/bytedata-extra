@@ -56,7 +56,7 @@ impl CodePoint {
                 TokenTree::Literal(Literal::string("## Alternative representations:")),
                 TokenTree::Punct(Punct::new(']', Spacing::Alone)),
             ]));
-            
+
             let mut alt_str = String::new();
             for alt in &self.alternative {
                 alt_str.clear();
@@ -77,7 +77,7 @@ impl CodePoint {
             }
             has_doc_empty = false;
         }
-        
+
         out.extend(TokenStream::from_iter([
             TokenTree::Ident(Ident::new("pub", Span::call_site())),
             TokenTree::Ident(Ident::new("const", Span::call_site())),
@@ -113,14 +113,21 @@ impl CodePoint {
     }
 }
 
-fn fail<D: core::fmt::Debug>(file_path: &str, line_count: u32, msg: &str, context: D) -> TokenStream {
+fn fail<D: core::fmt::Debug>(
+    file_path: &str,
+    line_count: u32,
+    msg: &str,
+    context: D,
+) -> TokenStream {
     #[cfg(test)]
     panic!("{msg} (location = {file_path}:{line_count}, context = {context:?})");
 
     TokenStream::from_iter([
         TokenTree::Ident(Ident::new("compile_error", Span::call_site())),
         TokenTree::Punct(Punct::new('!', Spacing::Alone)),
-        TokenTree::Literal(Literal::string(&format!("{msg} (location = {file_path}:{line_count}, context = {context:?})"))),
+        TokenTree::Literal(Literal::string(&format!(
+            "{msg} (location = {file_path}:{line_count}, context = {context:?})"
+        ))),
     ])
 }
 
@@ -218,7 +225,9 @@ impl<'a> MakeIdent<'a> {
         Self(s, STATE)
     }
     fn upper_snake(s: std::str::Chars<'a>) -> Self {
-        const STATE: CharBuf = CharBuf::new(MAKE_IDENT_JOIN_UNDERSCORE | MAKE_IDENT_CONTINUATION_UPPER | MAKE_IDENT_INITIAL_UPPER);
+        const STATE: CharBuf = CharBuf::new(
+            MAKE_IDENT_JOIN_UNDERSCORE | MAKE_IDENT_CONTINUATION_UPPER | MAKE_IDENT_INITIAL_UPPER,
+        );
         Self(s, STATE)
     }
 }
@@ -263,7 +272,10 @@ impl Iterator for MakeIdent<'_> {
     }
 }
 
-pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs::File>) -> TokenStream {
+pub(super) fn names_list(
+    file_path: String,
+    mut file: std::io::BufReader<std::fs::File>,
+) -> TokenStream {
     let mut out = TokenStream::new();
     let mut current_codepoint = CodePoint {
         codepoint: '\0',
@@ -290,18 +302,30 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                 }
                 if let Some(line) = line.strip_prefix("\t= ") {
                     if depth != 3 {
-                        return fail(&file_path, line_count, "Unexpected definition location", depth);
+                        return fail(
+                            &file_path,
+                            line_count,
+                            "Unexpected definition location",
+                            depth,
+                        );
                     }
                     for part in line.split(',') {
                         let part = part.trim();
-                        current_codepoint.names.push(String::from_iter(MakeIdent::upper_snake(part.chars())));
+                        current_codepoint
+                            .names
+                            .push(String::from_iter(MakeIdent::upper_snake(part.chars())));
                     }
                     continue;
                 }
 
                 if let Some(line) = line.strip_prefix("\t* ") {
                     if depth != 3 {
-                        return fail(&file_path, line_count, "Unexpected codepoint documentation", depth);
+                        return fail(
+                            &file_path,
+                            line_count,
+                            "Unexpected codepoint documentation",
+                            depth,
+                        );
                     }
                     current_codepoint.notes.push(line.to_owned());
                     continue;
@@ -309,16 +333,31 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
 
                 if let Some(line) = line.strip_prefix("\tx ") {
                     if depth != 3 {
-                        return fail(&file_path, line_count, "Unexpected codepoint see also", depth);
+                        return fail(
+                            &file_path,
+                            line_count,
+                            "Unexpected codepoint see also",
+                            depth,
+                        );
                     }
-                    let Some(part) = line.strip_prefix('(').and_then(|part| part.strip_suffix(')')) else {
+                    let Some(part) = line
+                        .strip_prefix('(')
+                        .and_then(|part| part.strip_suffix(')'))
+                    else {
                         let Ok(codepoint) = u32::from_str_radix(line, 16) else {
                             return fail(&file_path, line_count, "Invalid see also syntax", line);
                         };
                         let Some(codepoint) = std::char::from_u32(codepoint) else {
-                            return fail(&file_path, line_count, "Invalid codepoint in see also", codepoint);
+                            return fail(
+                                &file_path,
+                                line_count,
+                                "Invalid codepoint in see also",
+                                codepoint,
+                            );
                         };
-                        current_codepoint.see_also.push((line.to_owned(), codepoint));
+                        current_codepoint
+                            .see_also
+                            .push((line.to_owned(), codepoint));
                         continue;
                     };
                     let Some(p) = part.rfind(" - ") else {
@@ -330,22 +369,39 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                         return fail(&file_path, line_count, "Invalid see also syntax", line);
                     };
                     let Some(codepoint) = std::char::from_u32(codepoint) else {
-                        return fail(&file_path, line_count, "Invalid codepoint in see also", codepoint);
+                        return fail(
+                            &file_path,
+                            line_count,
+                            "Invalid codepoint in see also",
+                            codepoint,
+                        );
                     };
-                    current_codepoint.see_also.push((name.to_owned(), codepoint));
+                    current_codepoint
+                        .see_also
+                        .push((name.to_owned(), codepoint));
                     continue;
                 }
 
                 if let Some(line) = line.strip_prefix("\t: ") {
                     if depth != 3 {
-                        return fail(&file_path, line_count, "Unexpected codepoint alternative", depth);
+                        return fail(
+                            &file_path,
+                            line_count,
+                            "Unexpected codepoint alternative",
+                            depth,
+                        );
                     }
                     let mut alternative = Vec::new();
                     for part in line.split(' ') {
                         let part = part.trim();
                         let codepoint = u32::from_str_radix(part, 16).unwrap();
                         let Some(codepoint) = std::char::from_u32(codepoint) else {
-                            return fail(&file_path, line_count, "Invalid codepoint in alternative", codepoint);
+                            return fail(
+                                &file_path,
+                                line_count,
+                                "Invalid codepoint in alternative",
+                                codepoint,
+                            );
                         };
                         alternative.push(codepoint);
                     }
@@ -362,18 +418,13 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                 if let Some(line) = line.strip_prefix("@@\t") {
                     // block header
                     if depth == 2 {
-                        out.extend([
-                            TokenTree::Punct(Punct::new('}', Spacing::Alone)),
-                        ]);
+                        out.extend([TokenTree::Punct(Punct::new('}', Spacing::Alone))]);
                         depth = 1;
                     }
                     if depth == 1 {
-                        out.extend([
-                            TokenTree::Punct(Punct::new('}', Spacing::Alone)),
-                        ]);
+                        out.extend([TokenTree::Punct(Punct::new('}', Spacing::Alone))]);
                         depth = 0;
                     }
-
 
                     let Some((codepoint_start, rest)) = line.split_once('\t') else {
                         return fail(&file_path, line_count, "Invalid codepoint line", line);
@@ -395,17 +446,20 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                         TokenTree::Punct(Punct::new('=', Spacing::Alone)),
                         TokenTree::Literal(Literal::string(rest.trim())),
                         TokenTree::Punct(Punct::new(']', Spacing::Alone)),
-
                         TokenTree::Punct(Punct::new('#', Spacing::Joint)),
                         TokenTree::Punct(Punct::new('[', Spacing::Joint)),
                         TokenTree::Ident(Ident::new("doc", Span::call_site())),
                         TokenTree::Punct(Punct::new('=', Spacing::Alone)),
-                        TokenTree::Literal(Literal::string(&format!("- Range: 0x{codepoint_start:06X} - 0x{codepoint_end:06X}"))),
+                        TokenTree::Literal(Literal::string(&format!(
+                            "- Range: 0x{codepoint_start:06X} - 0x{codepoint_end:06X}"
+                        ))),
                         TokenTree::Punct(Punct::new(']', Spacing::Alone)),
-
                         TokenTree::Ident(Ident::new("pub", Span::call_site())),
                         TokenTree::Ident(Ident::new("mod", Span::call_site())),
-                        TokenTree::Ident(Ident::new(&String::from_iter(MakeIdent::snake(rest.chars())), Span::call_site())),
+                        TokenTree::Ident(Ident::new(
+                            &String::from_iter(MakeIdent::snake(rest.chars())),
+                            Span::call_site(),
+                        )),
                         TokenTree::Punct(Punct::new('{', Spacing::Alone)),
                     ]);
                     depth = 1;
@@ -414,9 +468,7 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
 
                 if let Some(line) = line.strip_prefix("@\t") {
                     if depth == 2 {
-                        out.extend([
-                            TokenTree::Punct(Punct::new('}', Spacing::Alone)),
-                        ]);
+                        out.extend([TokenTree::Punct(Punct::new('}', Spacing::Alone))]);
                         depth = 1;
                     }
                     if depth != 1 {
@@ -426,7 +478,10 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                         return fail(&file_path, line_count, "Unexpected section line", line);
                     };
                     let name = line.split_once('\t').map(|(x, _)| x).unwrap_or(line);
-                    let name = name.split_once('(').and_then(|(_, b)| b.split_once(')').map(|(a, _)| a)).unwrap_or(name);
+                    let name = name
+                        .split_once('(')
+                        .and_then(|(_, b)| b.split_once(')').map(|(a, _)| a))
+                        .unwrap_or(name);
 
                     out.extend([
                         TokenTree::Punct(Punct::new('#', Spacing::Joint)),
@@ -435,10 +490,12 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                         TokenTree::Punct(Punct::new('=', Spacing::Alone)),
                         TokenTree::Literal(Literal::string(line.trim())),
                         TokenTree::Punct(Punct::new(']', Spacing::Alone)),
-
                         TokenTree::Ident(Ident::new("pub", Span::call_site())),
                         TokenTree::Ident(Ident::new("mod", Span::call_site())),
-                        TokenTree::Ident(Ident::new(&String::from_iter(MakeIdent::snake(name.chars())), Span::call_site())),
+                        TokenTree::Ident(Ident::new(
+                            &String::from_iter(MakeIdent::snake(name.chars())),
+                            Span::call_site(),
+                        )),
                         TokenTree::Punct(Punct::new('{', Spacing::Alone)),
                     ]);
                     depth = 2;
@@ -464,7 +521,14 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                     continue;
                 }
 
-                if line.len() < 5 || depth != 2 || line.split_once('\t').map(|(x, _)| x.len()).unwrap_or_default() < 4 {
+                if line.len() < 5
+                    || depth != 2
+                    || line
+                        .split_once('\t')
+                        .map(|(x, _)| x.len())
+                        .unwrap_or_default()
+                        < 4
+                {
                     eprintln!("Skipping line: [{depth}] {line:?}");
                     continue;
                 }
@@ -479,14 +543,19 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                 let line = &line[5..];
                 current_codepoint.codepoint = ch;
                 if line.starts_with('<') {
-                    let Some(kind) = line.strip_prefix('<').and_then(|kind| kind.strip_suffix('>')) else {
+                    let Some(kind) = line
+                        .strip_prefix('<')
+                        .and_then(|kind| kind.strip_suffix('>'))
+                    else {
                         return fail(&file_path, line_count, "Invalid codepoint kind", line);
                     };
                     current_codepoint.kind.push_str(kind);
                     depth = 3;
                     continue;
                 }
-                current_codepoint.names.push(String::from_iter(MakeIdent::upper_snake(line.chars())));
+                current_codepoint
+                    .names
+                    .push(String::from_iter(MakeIdent::upper_snake(line.chars())));
                 depth = 3;
                 continue;
             }
@@ -494,7 +563,9 @@ pub(super) fn names_list(file_path: String, mut file: std::io::BufReader<std::fs
                 out.extend(TokenStream::from_iter([
                     TokenTree::Ident(Ident::new("compile_error", Span::call_site())),
                     TokenTree::Punct(Punct::new('!', Spacing::Alone)),
-                    TokenTree::Literal(Literal::string(&format!("Error while reading file: {err}"))),
+                    TokenTree::Literal(Literal::string(&format!(
+                        "Error while reading file: {err}"
+                    ))),
                 ]));
                 break;
             }

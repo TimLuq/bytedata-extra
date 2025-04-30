@@ -6,7 +6,6 @@ pub struct StdBuffered<T> {
     ended: bool,
 }
 
-
 impl<T: std::io::BufRead> StdBuffered<T> {
     #[inline]
     pub const fn new(inner: T) -> Self {

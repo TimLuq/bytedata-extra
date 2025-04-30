@@ -21,7 +21,6 @@ pub struct Gb18030Encoding {
 pub static GB18030: Gb18030Encoding = Gb18030Encoding::new();
 
 impl Gb18030Encoding {
-
     /// Create a new GB18030 encoding instance.
     #[inline]
     #[must_use]
@@ -105,7 +104,6 @@ impl crate::Charset for Gb18030Encoding {
             // IANA
             Self::CHARSET_NAME,
             "csutf8",
-
             // extra
             "utf8",
             "unicode-1-1-utf-8",
@@ -162,7 +160,8 @@ const fn detect_const_inner(gbk: bool, mut bytes: &[u8]) -> crate::detect::Detec
             crate::DecodeResult::Char(_, len) => {
                 let len = len as usize;
                 offset += len;
-                bytes = bytedata::const_or_bytes(bytedata::const_slice(bytes, len..bytes.len()), b"");
+                bytes =
+                    bytedata::const_or_bytes(bytedata::const_slice(bytes, len..bytes.len()), b"");
             }
             crate::DecodeResult::InvalidChar(_, _) => {
                 return crate::detect::DetectionResult::Irrelevant;
@@ -171,7 +170,8 @@ const fn detect_const_inner(gbk: bool, mut bytes: &[u8]) -> crate::detect::Detec
                 #[expect(clippy::cast_possible_truncation)]
                 let len = len as usize;
                 offset += len;
-                bytes = bytedata::const_or_bytes(bytedata::const_slice(bytes, len..bytes.len()), b"");
+                bytes =
+                    bytedata::const_or_bytes(bytedata::const_slice(bytes, len..bytes.len()), b"");
             }
             crate::DecodeResult::Empty | crate::DecodeResult::Incomplete => {
                 if offset < MIN_LEN {
@@ -208,7 +208,11 @@ const fn decode_const_inner(bytes: &[u8]) -> crate::DecodeResult {
             }
             return crate::DecodeResult::InvalidChar(x as u32, 2);
         }
-        let (ch, len) = if second < 0x7F { (first as u32, 1) } else { (((first as u32) << 8_i32) | second as u32, 2) };
+        let (ch, len) = if second < 0x7F {
+            (first as u32, 1)
+        } else {
+            (((first as u32) << 8_i32) | second as u32, 2)
+        };
         return crate::DecodeResult::InvalidChar(ch, len);
     }
     if bytes.len() < 3 {
@@ -225,21 +229,26 @@ const fn decode_const_inner(bytes: &[u8]) -> crate::DecodeResult {
     if fourth < 0x30 || fourth > 0x39 {
         return crate::DecodeResult::InvalidChar(first as u32, 1);
     }
-    let ptr = (((first as u32) - 0x81) * (10 * 126 * 10)) + (((second as u32) - 0x30) * (10 * 126)) + (((third as u32) - 0x81) * 10) + (fourth as u32) - 0x30;
+    let ptr = (((first as u32) - 0x81) * (10 * 126 * 10))
+        + (((second as u32) - 0x30) * (10 * 126))
+        + (((third as u32) - 0x81) * 10)
+        + (fourth as u32)
+        - 0x30;
     if (ptr > 39_419 && ptr < 189_000) || ptr > 1_237_575 {
         return crate::DecodeResult::InvalidChar(ptr, 4);
     }
     if ptr == 7457 {
         return crate::DecodeResult::Char('\u{E7C7}', 4);
     }
-    let (offset, cp_offset) = if ptr >= 189_000	{
+    let (offset, cp_offset) = if ptr >= 189_000 {
         (189_000, 0x10000)
     } else if ptr >= 39394 {
         (39_394, 0xFFE6)
     } else {
         #[expect(clippy::cast_possible_truncation)]
         let ptr = ptr as u16;
-        let Some(&(offset, cp_offset)) = b_find_before(ptr, &gb18030_cp_ranges::GB18030_CP_RANGES) else {
+        let Some(&(offset, cp_offset)) = b_find_before(ptr, &gb18030_cp_ranges::GB18030_CP_RANGES)
+        else {
             unreachable!();
         };
         (offset as u32, cp_offset as u32)
@@ -267,7 +276,13 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
                     chunk_len -= ascii;
                     consumed -= ascii;
                 }
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                        bytedata::const_slice(&chunk, 0..chunk_len),
+                        b"",
+                    )),
+                    consumed as u16,
+                );
             }
             if bytes.is_empty() {
                 return crate::EncodeResult::Empty;
@@ -290,16 +305,31 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
                     chunk_len -= ascii;
                     consumed -= ascii;
                 }
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                        bytedata::const_slice(&chunk, 0..chunk_len),
+                        b"",
+                    )),
+                    consumed as u16,
+                );
             }
-            bytes = bytedata::const_or_bytes(bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()), b"");
+            bytes = bytedata::const_or_bytes(
+                bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()),
+                b"",
+            );
             continue;
         }
 
         #[expect(clippy::cast_possible_truncation)]
         if ch == 0xE5E5 {
             if chunk_len != 0 {
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                        bytedata::const_slice(&chunk, 0..chunk_len),
+                        b"",
+                    )),
+                    consumed as u16,
+                );
             }
             let ch = unsafe { char::from_u32_unchecked(ch) };
             return crate::EncodeResult::InvalidChar(ch, ch_len as u16);
@@ -311,9 +341,18 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
             chunk_len += 1;
             #[expect(clippy::cast_possible_truncation)]
             if chunk_len > 10 {
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                        bytedata::const_slice(&chunk, 0..chunk_len),
+                        b"",
+                    )),
+                    consumed as u16,
+                );
             }
-            bytes = bytedata::const_or_bytes(bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()), b"");
+            bytes = bytedata::const_or_bytes(
+                bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()),
+                b"",
+            );
             continue;
         }
 
@@ -345,9 +384,18 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
             chunk_len += 2;
             #[expect(clippy::cast_possible_truncation)]
             if chunk_len > 10 {
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                        bytedata::const_slice(&chunk, 0..chunk_len),
+                        b"",
+                    )),
+                    consumed as u16,
+                );
             }
-            bytes = bytedata::const_or_bytes(bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()), b"");
+            bytes = bytedata::const_or_bytes(
+                bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()),
+                b"",
+            );
             continue;
         }
 
@@ -364,9 +412,18 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
                     chunk_len += 1;
                     consumed += ch_len as usize;
                     if chunk_len > 10 {
-                        return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                        return crate::EncodeResult::Chunk(
+                            bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                                bytedata::const_slice(&chunk, 0..chunk_len),
+                                b"",
+                            )),
+                            consumed as u16,
+                        );
                     }
-                    bytes = bytedata::const_or_bytes(bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()), b"");
+                    bytes = bytedata::const_or_bytes(
+                        bytedata::const_slice(bytes, (ch_len as usize)..bytes.len()),
+                        b"",
+                    );
                     continue;
                 }
             }
@@ -375,7 +432,13 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
         #[expect(clippy::cast_possible_truncation)]
         if gbk {
             if chunk_len != 0 {
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                        bytedata::const_slice(&chunk, 0..chunk_len),
+                        b"",
+                    )),
+                    consumed as u16,
+                );
             }
             let ch = unsafe { char::from_u32_unchecked(ch) };
             return crate::EncodeResult::InvalidChar(ch, ch_len as u16);
@@ -388,12 +451,14 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
         } else {
             #[expect(clippy::cast_possible_truncation)]
             let ch = ch as u16;
-            let Some(&(offset, cp_offset)) = b_find_before_val(ch, &gb18030_cp_ranges::GB18030_CP_RANGES) else {
+            let Some(&(offset, cp_offset)) =
+                b_find_before_val(ch, &gb18030_cp_ranges::GB18030_CP_RANGES)
+            else {
                 unreachable!();
             };
             (offset as u32, cp_offset as u32)
         };
-        
+
         let ptr = offset + (ch - cp_offset);
         let div = 10 * 126 * 10;
         #[expect(clippy::integer_division)]
@@ -416,7 +481,13 @@ const fn encode_const_inner(mut bytes: &[u8], gbk: bool) -> crate::EncodeResult 
         consumed += ch_len as usize;
         if chunk_len > 10 {
             #[expect(clippy::cast_possible_truncation)]
-            return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(bytedata::const_slice(&chunk, 0..chunk_len), b"")), consumed as u16);
+            return crate::EncodeResult::Chunk(
+                bytedata::ByteChunk::from_slice(bytedata::const_or_bytes(
+                    bytedata::const_slice(&chunk, 0..chunk_len),
+                    b"",
+                )),
+                consumed as u16,
+            );
         }
     }
 }

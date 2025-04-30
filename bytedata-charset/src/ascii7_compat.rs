@@ -1,19 +1,18 @@
 //! ## ASCII-7 compatible charset encoding
-//! 
+//!
 //! This module provides the base for an 8-bit ASCII-7 compatible charset encoder.
 //! See the [`AsciiCompatible`] struct for more information.
 
-
 /// An ASCII-7 compatible charset encoder.
-/// 
+///
 /// This struct provides the base for an 8-bit ASCII-7 compatible charset encoder.
 /// As the 128 first characters are the same as ASCII-7, this needs to map the 128 extended characters to the corresponding unicode character.
 /// A list of the extended characters is provided as a static array to the [`AsciiCompatible::new`] function to allow this charset to substitute the bytes and characters.
-/// 
+///
 /// If the encoding you are implementing does not have the full set of 128 extended characters defined, you can use the `'\0'` value to trigger [`DecodeResult::InvalidChar`] for the missing characters.
-/// 
+///
 /// *The feature guarded ISO-8859 and windows charsets in this crate internally uses `AsciiCompatible` to provide their charset encoding.*
-/// 
+///
 /// [`DecodeResult::InvalidChar`]: crate::DecodeResult::InvalidChar
 #[cfg_attr(docsrs, doc(cfg(feature = "ascii7-compat")))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,7 +28,7 @@ impl AsciiCompatible {
     pub const fn new(name: &'static str, chars: &'static [char; 128]) -> Self {
         Self { chars, name }
     }
-    
+
     /// Decode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -52,7 +51,7 @@ impl AsciiCompatible {
         let byte = unsafe { bytes.as_ptr().read() };
         decode_const_inner(self.chars, byte)
     }
-    
+
     /// Decode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -90,7 +89,7 @@ impl AsciiCompatible {
 
         fallback(self, bytes)
     }
-    
+
     /// Encode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -120,7 +119,7 @@ impl AsciiCompatible {
         const fn fallback(this: &AsciiCompatible, chars: &str) -> crate::EncodeResult {
             this.encode_const(chars)
         }
-        
+
         let maxlen = chars.len();
         if maxlen == 0 {
             return crate::EncodeResult::Empty;
@@ -237,10 +236,13 @@ const fn encode_const_inner(chars: &'static [char; 128], data: &str) -> crate::E
                 buff_off += 1;
                 consumed += b_len;
                 if buff_off < buf.len() {
-                    chardata = match bytedata::const_slice_str(chardata, (b_len as usize)..chardata.len()) {
-                        bytedata::StrSliceResult::OutOfBounds | bytedata::StrSliceResult::InvalidUtf8 => break,
-                        bytedata::StrSliceResult::Success(x) => x,
-                    };
+                    chardata =
+                        match bytedata::const_slice_str(chardata, (b_len as usize)..chardata.len())
+                        {
+                            bytedata::StrSliceResult::OutOfBounds
+                            | bytedata::StrSliceResult::InvalidUtf8 => break,
+                            bytedata::StrSliceResult::Success(x) => x,
+                        };
                     continue;
                 }
                 break;
@@ -253,10 +255,12 @@ const fn encode_const_inner(chars: &'static [char; 128], data: &str) -> crate::E
             buff_off += 1;
             consumed += 1;
             if buff_off < buf.len() {
-                chardata = match bytedata::const_slice_str(chardata, (b_len as usize)..chardata.len()) {
-                    bytedata::StrSliceResult::OutOfBounds | bytedata::StrSliceResult::InvalidUtf8 => break,
-                    bytedata::StrSliceResult::Success(x) => x,
-                };
+                chardata =
+                    match bytedata::const_slice_str(chardata, (b_len as usize)..chardata.len()) {
+                        bytedata::StrSliceResult::OutOfBounds
+                        | bytedata::StrSliceResult::InvalidUtf8 => break,
+                        bytedata::StrSliceResult::Success(x) => x,
+                    };
                 continue;
             }
             break;
@@ -280,7 +284,9 @@ const fn encode_const_inner(chars: &'static [char; 128], data: &str) -> crate::E
         consumed += b_len;
         if buff_off != buf.len() {
             chardata = match bytedata::const_slice_str(chardata, (b_len as usize)..chardata.len()) {
-                bytedata::StrSliceResult::OutOfBounds | bytedata::StrSliceResult::InvalidUtf8 => break,
+                bytedata::StrSliceResult::OutOfBounds | bytedata::StrSliceResult::InvalidUtf8 => {
+                    break
+                }
                 bytedata::StrSliceResult::Success(x) => x,
             };
             continue;

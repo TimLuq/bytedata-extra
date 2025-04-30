@@ -1,7 +1,10 @@
 use crate::ascii7_compat::AsciiCompatible;
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_1 as crate::Charset>::CHARSET_NAME, &super::ISO_8859_1_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_1 as crate::Charset>::CHARSET_NAME,
+    &super::ISO_8859_1_CHARSET,
+);
 
 /// An encoding for ISO-8859-1.
 #[cfg_attr(docsrs, doc(cfg(feature = "iso-8859-1")))]
@@ -9,7 +12,7 @@ pub static ISO_8859_1: Iso8859_1 = Iso8859_1::new();
 
 /// An encoding for ISO-8859-1.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -17,7 +20,6 @@ pub static ISO_8859_1: Iso8859_1 = Iso8859_1::new();
 pub struct Iso8859_1;
 
 impl Iso8859_1 {
-
     /// Create a new ISO-8859-1 encoding instance.
     #[inline]
     #[must_use]
@@ -46,7 +48,7 @@ impl Iso8859_1 {
         let chr = bytes[0] as char;
         crate::DecodeResult::Char(chr, 1)
     }
-    
+
     /// Decode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -84,7 +86,7 @@ impl Iso8859_1 {
 
         fallback(bytes)
     }
-    
+
     /// Encode characters from the given bytes.
     #[inline]
     #[must_use]
@@ -179,10 +181,11 @@ impl crate::Charset for Iso8859_1 {
             "latin1",
             "l1",
             "iso_8859-1:1987",
-
             // code pages
-            "cp819", "ibm819",
-            "cp28591", "windows-28591",
+            "cp819",
+            "ibm819",
+            "cp28591",
+            "windows-28591",
         ]
     }
 }

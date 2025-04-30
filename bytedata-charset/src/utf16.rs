@@ -83,15 +83,11 @@ impl Utf16Encoding {
     #[must_use]
     pub const fn detect_const(self, bytes: &[u8]) -> crate::detect::DetectionResult {
         match self.0 {
-            CharsetEndian::Big => {
-                detect_be(bytes)
-            }
-            CharsetEndian::Little => {
-                detect_le(bytes)
-            }
+            CharsetEndian::Big => detect_be(bytes),
+            CharsetEndian::Little => detect_le(bytes),
         }
     }
-    
+
     /// Encode UTF-16 characters. `chars` must not be empty.
     fn encode_inner(self, chars: &str) -> crate::EncodeResult {
         let mut buf = [0_u16; 7];
@@ -101,7 +97,10 @@ impl Utf16Encoding {
                 // SAFETY: buf is a valid UTF-16 sequence and encoded according to the endianness
                 let buf = unsafe { core::mem::transmute::<[u16; 7], [u8; 14]>(buf) };
                 #[expect(clippy::cast_possible_truncation)]
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_array(&buf), idx as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_array(&buf),
+                    idx as u16,
+                );
             }
             let ch = ch as u32;
             if ch < 0xD800 || (0xE000..0x1_0000).contains(&ch) {
@@ -118,7 +117,10 @@ impl Utf16Encoding {
                 // SAFETY: buf is a valid UTF-16 sequence and encoded according to the endianness
                 let buf = unsafe { core::mem::transmute::<[u16; 7], [u8; 14]>(buf) };
                 #[expect(clippy::cast_possible_truncation)]
-                return crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&buf[0..12]), idx as u16);
+                return crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(&buf[0..12]),
+                    idx as u16,
+                );
             }
             let ch = ch - 0x1_0000;
             buf[buf_use] = match self.0 {
@@ -139,7 +141,10 @@ impl Utf16Encoding {
         // SAFETY: buf is a valid UTF-16 sequence and encoded according to the endianness
         let buf = unsafe { core::mem::transmute::<[u16; 7], [u8; 14]>(buf) };
         #[expect(clippy::cast_possible_truncation)]
-        crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&buf[0..(buf_use << 1)]), chars.len() as u16)
+        crate::EncodeResult::Chunk(
+            bytedata::ByteChunk::from_slice(&buf[0..(buf_use << 1)]),
+            chars.len() as u16,
+        )
     }
 }
 
@@ -155,7 +160,18 @@ impl crate::Charset for Utf16Encoding {
     fn charset_alias(&self) -> &[&'static str] {
         match self.0 {
             CharsetEndian::Big => ["utf-16be", "unicodefffe", "csutf16be"].as_slice(),
-            CharsetEndian::Little => ["utf-16le", "utf-16", "unicodefeff", "unicode", "ucs-2", "iso-10646-ucs-2", "csunicode", "csutf16le", "csutf16"].as_slice(),
+            CharsetEndian::Little => [
+                "utf-16le",
+                "utf-16",
+                "unicodefeff",
+                "unicode",
+                "ucs-2",
+                "iso-10646-ucs-2",
+                "csunicode",
+                "csutf16le",
+                "csutf16",
+            ]
+            .as_slice(),
         }
     }
 }
@@ -266,12 +282,8 @@ impl crate::detect::CharsetDetector for Utf16Encoding {
     #[inline]
     fn detect(&self, bytes: &[u8]) -> crate::detect::DetectionResult {
         match self.0 {
-            CharsetEndian::Big => {
-                detect_be(bytes)
-            }
-            CharsetEndian::Little => {
-                detect_le(bytes)
-            }
+            CharsetEndian::Big => detect_be(bytes),
+            CharsetEndian::Little => detect_le(bytes),
         }
     }
 }
@@ -325,9 +337,9 @@ impl Utf16CodeUnit {
         }
     }
     /// Converts the character to one or two UTF-16 characters.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the character is part of a surrogate pair.
     #[inline]
     pub const fn from_char(ch: char) -> Result<Self, [Self; 2]> {
@@ -337,10 +349,7 @@ impl Utf16CodeUnit {
             Ok(Self::new(ch as u16))
         } else {
             let ch = ch - 0x1_0000;
-            let buff = [
-                ((ch >> 10) | 0xD800) as u16,
-                ((ch & 0x3FF) | 0xDC00) as u16,
-            ];
+            let buff = [((ch >> 10) | 0xD800) as u16, ((ch & 0x3FF) | 0xDC00) as u16];
             // SAFETY: buff is a valid UTF-16 sequence that is transparent over u16.
             Err(unsafe { core::mem::transmute::<[u16; 2], [Self; 2]>(buff) })
         }
@@ -389,18 +398,21 @@ pub struct Utf16String<'a> {
 impl<'a> Utf16String<'a> {
     /// Create a new UTF-16 string from a byte sequence.
     /// The byte sequence must be a multiple of 2 bytes and contain valid UTF-16 format using the specified endianness.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns the input byte sequence and the error that occurred.
-    /// 
+    ///
     /// - `Utf16Error::NotEvenLength`: The input is not a valid UTF-16 sequence since all sequences should be multiples of `u16`.
     /// - `Utf16Error::NotAligned`: The input should be aligned to 2 bytes.
     /// - `Utf16Error::Incomplete`: The input ends with a high surrogate when expecting a low surrogate to follow.
     /// - `Utf16Error::UnexpectedLow`: Expected something that is not a low surrogate, but found one.
     /// - `Utf16Error::ExpectedLow`: Expected a low surrogate, but found something else.
     #[inline]
-    pub const fn new(bytes: bytedata::ByteData<'a>, endian: CharsetEndian) -> Result<Self, (bytedata::ByteData<'a>, Utf16Error)> {
+    pub const fn new(
+        bytes: bytedata::ByteData<'a>,
+        endian: CharsetEndian,
+    ) -> Result<Self, (bytedata::ByteData<'a>, Utf16Error)> {
         let check_bytes = bytes.as_slice();
         let bytes_len = check_bytes.len();
         if bytes_len & 1 != 0 {
@@ -425,7 +437,11 @@ impl<'a> Utf16String<'a> {
     }
 
     #[inline]
-    const fn new_le(mut check_bytes: *const u16, mut u16_len: usize, bytes_len: usize) -> Result<char, Utf16Error> {
+    const fn new_le(
+        mut check_bytes: *const u16,
+        mut u16_len: usize,
+        bytes_len: usize,
+    ) -> Result<char, Utf16Error> {
         let first = 'block: {
             // SAFETY: check_bytes is a valid pointer to u16
             let high = unsafe { check_bytes.read() }.to_le();
@@ -483,7 +499,11 @@ impl<'a> Utf16String<'a> {
     }
 
     #[inline]
-    const fn new_be(mut check_bytes: *const u16, mut u16_len: usize, bytes_len: usize) -> Result<char, Utf16Error> {
+    const fn new_be(
+        mut check_bytes: *const u16,
+        mut u16_len: usize,
+        bytes_len: usize,
+    ) -> Result<char, Utf16Error> {
         let first = 'block: {
             // SAFETY: check_bytes is a valid pointer to u16
             let high = unsafe { check_bytes.read() }.to_be();
@@ -685,7 +705,6 @@ impl core::iter::ExactSizeIterator for Utf16Units<'_> {
 impl core::iter::FusedIterator for Utf16Units<'_> {}
 
 impl core::iter::DoubleEndedIterator for Utf16Units<'_> {
-
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.bytes.is_empty() {
@@ -748,7 +767,9 @@ impl core::iter::Iterator for Utf16Chars<'_> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let unit = self.0.next()?;
-        if let Some(ch) = unit.to_char() { Some(ch) } else {
+        if let Some(ch) = unit.to_char() {
+            Some(ch)
+        } else {
             #[expect(clippy::cast_lossless)]
             let high = (unit.0 & 0x03FF) as u32;
             #[expect(clippy::cast_lossless)]
@@ -773,7 +794,9 @@ impl core::iter::DoubleEndedIterator for Utf16Chars<'_> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let unit = self.0.next_back()?;
-        if let Some(ch) = unit.to_char() { Some(ch) } else {
+        if let Some(ch) = unit.to_char() {
+            Some(ch)
+        } else {
             #[expect(clippy::cast_lossless)]
             let low = (unit.0 & 0x03FF) as u32;
             #[expect(clippy::cast_lossless)]

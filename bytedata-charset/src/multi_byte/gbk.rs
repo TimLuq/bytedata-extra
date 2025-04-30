@@ -1,9 +1,8 @@
-
 /// GBK encoding. A legacy encoding for simplified Chinese characters.
 ///
 /// Use [`UTF-8`], [`UTF-16`], or [`GB18030`] instead if possible.
 /// (GB18030 is an encoding backward compatible with GBK but support a much larger mapping against Unicode.)
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 /// [`UTF-16`]: crate::Utf16Encoding
 /// [`GB18030`]: crate::multi_byte::Gb18030Encoding
@@ -18,7 +17,6 @@ pub struct GbkEncoding(super::Gb18030Encoding);
 pub static GBK: GbkEncoding = GbkEncoding::new();
 
 impl GbkEncoding {
-
     /// Create a new GBK encoding instance.
     #[inline]
     #[must_use]
@@ -88,7 +86,6 @@ impl crate::Charset for GbkEncoding {
             "cp936",
             "ms936",
             "windows-936",
-
             // other
             "chinese",
             "csgb2312",

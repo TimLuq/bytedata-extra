@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone)]
 pub struct Group<'a> {
     pattern: &'a crate::Pattern<'a>,
@@ -11,7 +10,10 @@ pub struct Group<'a> {
 impl<'a> Group<'a> {
     #[inline]
     #[must_use]
-    pub const fn new<'b: 'a>(capturing: bytedata::StringData<'a>, pattern: &'a crate::Pattern<'b>) -> Self {
+    pub const fn new<'b: 'a>(
+        capturing: bytedata::StringData<'a>,
+        pattern: &'a crate::Pattern<'b>,
+    ) -> Self {
         Self {
             pattern,
             capturing,
@@ -48,7 +50,10 @@ impl<'a> Group<'a> {
 }
 
 impl Group<'_> {
-    pub(crate) const fn test_inner<'e>(&self, state: crate::test_exec::TestExec<'e>) -> crate::test_exec::TestExec<'e> {
+    pub(crate) const fn test_inner<'e>(
+        &self,
+        state: crate::test_exec::TestExec<'e>,
+    ) -> crate::test_exec::TestExec<'e> {
         let mut state = state;
         let mut offset = state.offset;
         let mut count = 0;

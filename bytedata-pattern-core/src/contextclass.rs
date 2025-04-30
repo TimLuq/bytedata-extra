@@ -1,6 +1,8 @@
-use crate::{charclass::is_full_ws, test_exec::{ExecFlag, ExecResult, TestExec}, CharacterClass};
-
-
+use crate::{
+    charclass::is_full_ws,
+    test_exec::{ExecFlag, ExecResult, TestExec},
+    CharacterClass,
+};
 
 /// Zero-width context classes.
 #[derive(Clone, Copy)]
@@ -89,7 +91,7 @@ impl ContextClass {
                     exec.result = Some(ExecResult::InvalidEncoding);
                     return exec;
                 };
-                
+
                 let prev_word = exec.flags.is_set(ExecFlag::PrevWord);
                 let next_word = CharacterClass::Word.check_char(chk_chr);
                 exec.result = if prev_word != next_word {
@@ -182,7 +184,10 @@ impl ContextClass {
                         return exec;
                     }
                     let len = len as usize;
-                    loop_exec.chunk = bytedata::const_or_bytes(bytedata::const_slice(loop_exec.chunk, len..loop_exec.chunk.len()), b"");
+                    loop_exec.chunk = bytedata::const_or_bytes(
+                        bytedata::const_slice(loop_exec.chunk, len..loop_exec.chunk.len()),
+                        b"",
+                    );
                     loop_exec.offset += len;
                     if loop_exec.chunk.is_empty() {
                         exec.result = if exec.flags.is_set(ExecFlag::Incomplete) {

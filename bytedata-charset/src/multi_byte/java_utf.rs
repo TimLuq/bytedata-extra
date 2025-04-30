@@ -60,9 +60,7 @@ impl JavaModifiedUtf8Encoding {
     #[expect(clippy::missing_const_for_fn)]
     pub unsafe fn decode_cstr(bytes: *const i8) -> crate::DecodeResult {
         // SAFETY: forward the safety guarantee to the inner function.
-        unsafe {
-            decode_const_inner(bytes.cast::<u8>(), 0)
-        }
+        unsafe { decode_const_inner(bytes.cast::<u8>(), 0) }
     }
 
     /// Decodes a full MUTF-8 cstring into a `bytedata::SharedStrBuilder`.

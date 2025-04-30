@@ -1,5 +1,3 @@
-
-
 /// The result of a charset decoding operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_enums)]

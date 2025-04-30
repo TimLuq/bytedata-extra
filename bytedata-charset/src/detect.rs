@@ -1,4 +1,3 @@
-
 /// Confidence level of the charset detection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[expect(clippy::exhaustive_enums)]
@@ -176,15 +175,30 @@ impl UtfDetector {
     #[allow(clippy::missing_inline_in_public_items)]
     pub const fn select_const(bytes: &[u8]) -> (&'static (dyn crate::CharsetRef), DetectionResult) {
         let x = [
-            (&crate::Utf8Encoding as &'static dyn crate::CharsetRef, crate::Utf8Encoding::detect_const(bytes)),
-            (&crate::Utf16Encoding::UTF16_BE as &'static dyn crate::CharsetRef, crate::Utf16Encoding::UTF16_BE.detect_const(bytes)),
-            (&crate::Utf16Encoding::UTF16_LE as &'static dyn crate::CharsetRef, crate::Utf16Encoding::UTF16_LE.detect_const(bytes)),
+            (
+                &crate::Utf8Encoding as &'static dyn crate::CharsetRef,
+                crate::Utf8Encoding::detect_const(bytes),
+            ),
+            (
+                &crate::Utf16Encoding::UTF16_BE as &'static dyn crate::CharsetRef,
+                crate::Utf16Encoding::UTF16_BE.detect_const(bytes),
+            ),
+            (
+                &crate::Utf16Encoding::UTF16_LE as &'static dyn crate::CharsetRef,
+                crate::Utf16Encoding::UTF16_LE.detect_const(bytes),
+            ),
             #[cfg(feature = "utf-32")]
-            (&crate::Utf32Encoding::UTF32_BE as &'static dyn crate::CharsetRef, crate::Utf32Encoding::UTF32_BE.detect_const(bytes)),
+            (
+                &crate::Utf32Encoding::UTF32_BE as &'static dyn crate::CharsetRef,
+                crate::Utf32Encoding::UTF32_BE.detect_const(bytes),
+            ),
             #[cfg(feature = "utf-32")]
-            (&crate::Utf32Encoding::UTF32_LE as &'static dyn crate::CharsetRef, crate::Utf32Encoding::UTF32_LE.detect_const(bytes)),
+            (
+                &crate::Utf32Encoding::UTF32_LE as &'static dyn crate::CharsetRef,
+                crate::Utf32Encoding::UTF32_LE.detect_const(bytes),
+            ),
         ];
-        
+
         let mut pos = 0;
         let mut idx = 1;
         while idx < x.len() {

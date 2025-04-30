@@ -8,7 +8,6 @@ mod gbk;
 #[cfg(feature = "gbk")]
 pub use gbk::*;
 
-
 #[cfg(feature = "big5")]
 mod big5;
 #[cfg(feature = "big5")]

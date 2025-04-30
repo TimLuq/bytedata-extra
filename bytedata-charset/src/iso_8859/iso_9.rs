@@ -17,11 +17,14 @@ const ISO_8859_9_CHARSET: [char; 128] = {
 pub static ISO_8859_9: Iso8859_9 = Iso8859_9::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_9 as crate::Charset>::CHARSET_NAME, &ISO_8859_9_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Iso8859_9 as crate::Charset>::CHARSET_NAME,
+    &ISO_8859_9_CHARSET,
+);
 
 /// An encoding for ISO-8859-9.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -29,7 +32,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Iso8859_9 as crate::Chars
 pub struct Iso8859_9;
 
 impl Iso8859_9 {
-
     /// Create a new ISO-8859-9 encoding instance.
     #[inline]
     #[must_use]
@@ -101,11 +103,11 @@ impl crate::Charset for Iso8859_9 {
             "l5",
             "csisolatin5",
             "iso_8859-9:1989",
-            
             // code pages
-            "cp920", "ibm920",
-            "cp28599", "windows-28599",
-
+            "cp920",
+            "ibm920",
+            "cp28599",
+            "windows-28599",
             // other
             "iso8859-9",
             "iso88599",

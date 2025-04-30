@@ -9,7 +9,7 @@ static WIN_1250_CHARSET: [char; 128] = {
     charset[0x85 & 0x7F] = '\u{2026}';
     charset[0x86 & 0x7F] = '\u{2020}';
     charset[0x87 & 0x7F] = '\u{2021}';
-    
+
     charset[0x89 & 0x7F] = '\u{2030}';
     charset[0x8A & 0x7F] = '\u{0160}';
     charset[0x8B & 0x7F] = '\u{2039}';
@@ -60,11 +60,14 @@ static WIN_1250_CHARSET: [char; 128] = {
 pub static WINDOWS_1250: Windows1250 = Windows1250::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows1250 as crate::Charset>::CHARSET_NAME, &WIN_1250_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Windows1250 as crate::Charset>::CHARSET_NAME,
+    &WIN_1250_CHARSET,
+);
 
 /// An encoding for windows-1250.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -72,7 +75,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows1250 as crate::Cha
 pub struct Windows1250;
 
 impl Windows1250 {
-
     /// Create a new windows-1250 encoding instance.
     #[inline]
     #[must_use]
@@ -139,9 +141,10 @@ impl crate::Charset for Windows1250 {
             // IANA
             Self::CHARSET_NAME,
             "cswindows1250",
-            
             // code pages
-            "cp1250", "x-cp1250", "ibm1250",
+            "cp1250",
+            "x-cp1250",
+            "ibm1250",
         ]
     }
 }

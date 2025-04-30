@@ -18,18 +18,21 @@ const WIN_874_CHARSET: [char; 128] = {
 };
 
 /// An encoding for windows-874.
-/// 
+///
 /// This can be seen as a replacement for `iso-8859-11`.
 /// The html specification remaps `iso-8859-11` to `windows-874`.
 #[cfg_attr(docsrs, doc(cfg(feature = "windows-874")))]
 pub static WINDOWS_874: Windows874 = Windows874::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows874 as crate::Charset>::CHARSET_NAME, &WIN_874_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Windows874 as crate::Charset>::CHARSET_NAME,
+    &WIN_874_CHARSET,
+);
 
 /// An encoding for windows-874.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -37,7 +40,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows874 as crate::Char
 pub struct Windows874;
 
 impl Windows874 {
-
     /// Create a new windows-874 encoding instance.
     #[inline]
     #[must_use]
@@ -104,13 +106,11 @@ impl crate::Charset for Windows874 {
             // IANA
             Self::CHARSET_NAME,
             "cswindows874",
-            
             // code pages
-            "cp1162", "ibm1162",
-
+            "cp1162",
+            "ibm1162",
             // other
             "dos-874",
-
             // html extensions
             "iso-8859-11",
             "iso8859-11",

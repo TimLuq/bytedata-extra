@@ -108,12 +108,17 @@ impl Pattern<'_> {
             None => Ok(true),
             Some(test_exec::ExecResult::Mismatch) => Ok(false),
             Some(test_exec::ExecResult::Incomplete) => Ok(false),
-            Some(test_exec::ExecResult::InvalidEncoding) => Err(ExecError::InvalidEncoding(state.offset)),
+            Some(test_exec::ExecResult::InvalidEncoding) => {
+                Err(ExecError::InvalidEncoding(state.offset))
+            }
         }
     }
 
     #[inline]
-    pub(crate) const fn test_inner<'e>(&self, state: test_exec::TestExec<'e>) -> test_exec::TestExec<'e> {
+    pub(crate) const fn test_inner<'e>(
+        &self,
+        state: test_exec::TestExec<'e>,
+    ) -> test_exec::TestExec<'e> {
         match self {
             Pattern::Test(test) => test.test_inner(state),
             Pattern::Group(group) => group.test_inner(state),
@@ -125,7 +130,7 @@ impl Pattern<'_> {
                     match state.result {
                         Some(test_exec::ExecResult::Mismatch) => {
                             i += 1;
-                            continue
+                            continue;
                         }
                         _ => return state,
                     }
@@ -144,7 +149,7 @@ impl Pattern<'_> {
                         None => {
                             loop_state = state;
                             i += 1;
-                            continue
+                            continue;
                         }
                         _ => return state,
                     }

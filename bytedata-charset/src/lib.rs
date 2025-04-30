@@ -1,9 +1,11 @@
-//! A library for working with charsets to transform bytes to 
+//! A library for working with charsets to transform bytes to
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(all(feature = "avx512f", feature = "nightly"), feature(avx512_target_feature, stdarch_x86_avx512))]
+#![cfg_attr(
+    all(feature = "avx512f", feature = "nightly"),
+    feature(avx512_target_feature, stdarch_x86_avx512)
+)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![allow(clippy::missing_docs_in_private_items)]
 #![allow(clippy::module_name_repetitions)]
@@ -121,18 +123,18 @@ extern crate alloc;
 mod traits;
 
 mod detect;
-mod result;
 mod endian;
+mod result;
 
 mod ascii7;
-mod utf8;
 mod utf16;
+mod utf8;
 
+pub use ascii7::{Ascii7Encoding, ASCII7};
 pub use detect::*;
 pub use traits::*;
-pub use ascii7::{ASCII7, Ascii7Encoding};
-pub use utf8::*;
 pub use utf16::*;
+pub use utf8::*;
 
 #[cfg(feature = "utf-32")]
 mod utf32;
@@ -160,5 +162,5 @@ pub mod single_byte;
 mod decode_stream;
 pub use decode_stream::*;
 
-pub use result::{DecodeResult, EncodeResult, ExhaustiveDecodeResult, ExhaustiveEncodeResult};
 pub use endian::CharsetEndian;
+pub use result::{DecodeResult, EncodeResult, ExhaustiveDecodeResult, ExhaustiveEncodeResult};

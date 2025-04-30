@@ -19,11 +19,14 @@ const X_USER_DEFINED_CHARSET: [char; 128] = {
 pub static X_USER_DEFINED: XUserDefined = XUserDefined::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<XUserDefined as crate::Charset>::CHARSET_NAME, &X_USER_DEFINED_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <XUserDefined as crate::Charset>::CHARSET_NAME,
+    &X_USER_DEFINED_CHARSET,
+);
 
 /// An encoding for X-USER-DEFINED.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -31,7 +34,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<XUserDefined as crate::Ch
 pub struct XUserDefined;
 
 impl XUserDefined {
-
     /// Create a new X-USER-DEFINED encoding instance.
     #[inline]
     #[must_use]
@@ -99,11 +101,11 @@ impl crate::Charset for XUserDefined {
             // IANA
             Self::CHARSET_NAME,
             "cskoi8r",
-            
             // code pages
-            "cp20866", "windows-20866",
-            "cp878", "ibm878",
-
+            "cp20866",
+            "windows-20866",
+            "cp878",
+            "ibm878",
             // other
             "koi",
             "koi8",

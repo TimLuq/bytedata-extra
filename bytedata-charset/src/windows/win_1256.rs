@@ -147,11 +147,14 @@ const WIN_1256_CHARSET: [char; 128] = {
 pub static WINDOWS_1256: Windows1256 = Windows1256::new();
 
 /// A mapper from bytes over 128 to the corresponding unicode character.
-const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows1256 as crate::Charset>::CHARSET_NAME, &WIN_1256_CHARSET);
+const ENCODER: AsciiCompatible = AsciiCompatible::new(
+    <Windows1256 as crate::Charset>::CHARSET_NAME,
+    &WIN_1256_CHARSET,
+);
 
 /// An encoding for windows-1256.
 /// If possible use [`UTF-8`] instead.
-/// 
+///
 /// [`UTF-8`]: crate::Utf8Encoding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(clippy::exhaustive_structs)]
@@ -159,7 +162,6 @@ const ENCODER: AsciiCompatible = AsciiCompatible::new(<Windows1256 as crate::Cha
 pub struct Windows1256;
 
 impl Windows1256 {
-
     /// Create a new windows-1256 encoding instance.
     #[inline]
     #[must_use]
@@ -226,9 +228,10 @@ impl crate::Charset for Windows1256 {
             // IANA
             Self::CHARSET_NAME,
             "cswindows1256",
-            
             // code pages
-            "cp1256", "x-cp1256", "ibm1256",
+            "cp1256",
+            "x-cp1256",
+            "ibm1256",
         ]
     }
 }
