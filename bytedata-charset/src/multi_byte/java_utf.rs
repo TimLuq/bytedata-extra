@@ -113,6 +113,76 @@ impl JavaModifiedUtf8Encoding {
         #[expect(clippy::cast_possible_truncation)]
         crate::result::ExhaustiveDecodeResult::Decoded((consumed as u32, utf8 as u32))
     }
+    
+    /// Decodes a full MUTF-8 cstring to a standard UTF-8 inplace.
+    ///
+    /// ## Safety
+    ///
+    /// The caller must ensure that the pointer is valid and points to a null-terminated string.
+    #[allow(clippy::missing_inline_in_public_items)]
+    pub unsafe fn decode_cstr_inplace(
+        bytes: *mut i8,
+    ) -> crate::result::ExhaustiveDecodeResult<(u32, u32)> {
+        let mut consumed = 0;
+        let mut written = 0;
+        loop {
+            // SAFETY: The pointer is valid and the length is already processed.
+            let bytes_offset = unsafe { bytes.add(consumed) }.cast::<u8>();
+            // SAFETY: The pointer is valid and the caller has guaranteed it is a cstr.
+            let result = unsafe { decode_const_inner(bytes_offset, 0) };
+            match result {
+                crate::DecodeResult::Char(ch, con) => {
+                    // SAFETY: The pointer is valid and the length is correct.
+                    let ptr = unsafe { bytes.add(written) }.cast::<u8>();
+                    // SAFETY: This may actually overflow, but if it does it will not be accessed in either case
+                    let region = unsafe { core::slice::from_raw_parts_mut(ptr, 4) };
+                    consumed += con as usize;
+                    written += ch.encode_utf8(region).len();
+                }
+                crate::DecodeResult::Utf8(utf8) => {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let utf8 = utf8 as usize;
+                    #[expect(clippy::else_if_without_else)]
+                    if consumed >= written + utf8 {
+                        core::ptr::copy_nonoverlapping(
+                            bytes_offset,
+                            // SAFETY: The pointer is valid and the length is correct.
+                            unsafe { bytes.add(written) }.cast::<u8>(),
+                            utf8,
+                        );
+                    } else if consumed > written {
+                        core::ptr::copy(
+                            bytes_offset,
+                            // SAFETY: The pointer is valid and the length is correct.
+                            unsafe { bytes.add(written) }.cast::<u8>(),
+                            consumed - written,
+                        );
+                    }
+                    consumed += utf8;
+                    written += utf8;
+                }
+                crate::DecodeResult::Empty if consumed > written => {
+                    // SAFETY: add a null terminator to the end of the result
+                    unsafe { bytes.add(written) }.write(0);
+                    break;
+                }
+                _ if consumed != 0 => {
+                    break;
+                }
+                crate::DecodeResult::Empty => {
+                    return crate::result::ExhaustiveDecodeResult::Empty
+                }
+                crate::DecodeResult::Incomplete => {
+                    return crate::result::ExhaustiveDecodeResult::Incomplete
+                }
+                crate::DecodeResult::InvalidChar(ch, con) => {
+                    return crate::result::ExhaustiveDecodeResult::InvalidChar(ch, con)
+                }
+            }
+        }
+        #[expect(clippy::cast_possible_truncation)]
+        crate::result::ExhaustiveDecodeResult::Decoded((consumed as u32, written as u32))
+    }
 
     /// Encodes a `str` into a MUTF-8 `bytedata::SharedStrBuilder`.
     #[cfg(feature = "alloc")]
