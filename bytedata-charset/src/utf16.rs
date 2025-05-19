@@ -246,7 +246,7 @@ impl Utf16Encoding {
 
     /// Encode UTF-16 characters.
     /// 
-    /// Returns the number of bytes written and the number of utf-8 bytes consumed.
+    /// Returns the number of utf-8 bytes consumed and the number of bytes written as `(consumed, written)`.
     #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
     pub fn encode_into_slice_u8(
@@ -263,19 +263,19 @@ impl Utf16Encoding {
                     let end = len + chunk.len();
                     if end > slice.len() {
                         if len != 0 {
-                            return crate::ExhaustiveEncodeResult::Encoded((build, len));
+                            return crate::ExhaustiveEncodeResult::Encoded((len, build));
                         }
                         return crate::ExhaustiveEncodeResult::Overflow;
                     }
                     let consumed = consumed as usize;
                     build += chunk.len();
-                    slice[len..(len + chunk.len())].copy_from_slice(chunk.as_slice());
+                    slice[len..end].copy_from_slice(chunk.as_slice());
                     len += consumed;
                     // SAFETY: the length is returned from the encode function
                     chars = unsafe { chars.get_unchecked(consumed..) };
                 }
                 _ if len != 0 => {
-                    return crate::ExhaustiveEncodeResult::Encoded((build, len));
+                    return crate::ExhaustiveEncodeResult::Encoded((len, build));
                 }
                 crate::EncodeResult::InvalidChar(ch, len_chunk) => {
                     return crate::ExhaustiveEncodeResult::InvalidChar(ch, len_chunk);
@@ -291,7 +291,7 @@ impl Utf16Encoding {
                 }
             }
         }
-        crate::ExhaustiveEncodeResult::Encoded((build, len))
+        crate::ExhaustiveEncodeResult::Encoded((len, build))
     }
 
     /// Encode UTF-16 characters. `chars` must not be empty.
