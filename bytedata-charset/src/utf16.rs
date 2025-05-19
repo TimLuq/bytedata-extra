@@ -201,6 +201,99 @@ impl Utf16Encoding {
         }
     }
 
+    /// Encode UTF-16 characters.
+    /// 
+    /// Returns the number of utf-8 bytes consumed.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[allow(clippy::allow_attributes)]
+    #[allow(clippy::missing_inline_in_public_items)]
+    pub fn encode_into(
+        self,
+        chars: &str,
+        bytes: &mut bytedata::SharedBytesBuilder,
+    ) -> crate::ExhaustiveEncodeResult<usize> {
+        let mut len = 0;
+        let mut chars = chars;
+        while !chars.is_empty() {
+            match self.encode_inner(chars) {
+                crate::EncodeResult::Chunk(chunk, consumed) => {
+                    let consumed = consumed as usize;
+                    bytes.extend_from_slice(&chunk);
+                    len += consumed;
+                    // SAFETY: the length is returned from the encode function
+                    chars = unsafe { chars.get_unchecked(consumed..) };
+                }
+                _ if len != 0 => {
+                    return crate::ExhaustiveEncodeResult::Encoded(len);
+                }
+                crate::EncodeResult::InvalidChar(ch, len_chunk) => {
+                    return crate::ExhaustiveEncodeResult::InvalidChar(ch, len_chunk);
+                }
+                crate::EncodeResult::Incomplete => {
+                    return crate::ExhaustiveEncodeResult::Incomplete;
+                }
+                crate::EncodeResult::Empty => {
+                    return crate::ExhaustiveEncodeResult::Empty;
+                }
+                crate::EncodeResult::Utf8(_len) => {
+                    unreachable!("UTF-8 is not supported in this function");
+                }
+            }
+        }
+        crate::ExhaustiveEncodeResult::Encoded(len)
+    }
+
+    /// Encode UTF-16 characters.
+    /// 
+    /// Returns the number of bytes written and the number of utf-8 bytes consumed.
+    #[allow(clippy::allow_attributes)]
+    #[allow(clippy::missing_inline_in_public_items)]
+    pub fn encode_into_slice_u8(
+        self,
+        chars: &str,
+        slice: &mut [u8],
+    ) -> crate::ExhaustiveEncodeResult<(usize, usize)> {
+        let mut build = 0;
+        let mut len = 0;
+        let mut chars = chars;
+        while !chars.is_empty() {
+            match self.encode_inner(chars) {
+                crate::EncodeResult::Chunk(chunk, consumed) => {
+                    let end = len + chunk.len();
+                    if end > slice.len() {
+                        if len != 0 {
+                            return crate::ExhaustiveEncodeResult::Encoded((build, len));
+                        }
+                        return crate::ExhaustiveEncodeResult::Overflow;
+                    }
+                    let consumed = consumed as usize;
+                    build += chunk.len();
+                    slice[len..(len + chunk.len())].copy_from_slice(chunk.as_slice());
+                    len += consumed;
+                    // SAFETY: the length is returned from the encode function
+                    chars = unsafe { chars.get_unchecked(consumed..) };
+                }
+                _ if len != 0 => {
+                    return crate::ExhaustiveEncodeResult::Encoded((build, len));
+                }
+                crate::EncodeResult::InvalidChar(ch, len_chunk) => {
+                    return crate::ExhaustiveEncodeResult::InvalidChar(ch, len_chunk);
+                }
+                crate::EncodeResult::Incomplete => {
+                    return crate::ExhaustiveEncodeResult::Incomplete;
+                }
+                crate::EncodeResult::Empty => {
+                    return crate::ExhaustiveEncodeResult::Empty;
+                }
+                crate::EncodeResult::Utf8(_len) => {
+                    unreachable!("UTF-8 is not supported in this function");
+                }
+            }
+        }
+        crate::ExhaustiveEncodeResult::Encoded((build, len))
+    }
+
     /// Encode UTF-16 characters. `chars` must not be empty.
     fn encode_inner(self, chars: &str) -> crate::EncodeResult {
         let mut buf = [0_u16; 7];

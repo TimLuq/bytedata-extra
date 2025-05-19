@@ -290,9 +290,10 @@ unsafe fn ascii7_encode_avx512bw(
     mut maxlen: usize,
     mut utflen: usize,
 ) -> crate::EncodeResult {
+    use core::arch::x86_64::__m512i;
     loop {
         #[expect(clippy::cast_ptr_alignment)]
-        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
+        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<__m512i>());
         #[expect(clippy::cast_possible_wrap)]
         let masked = core::arch::x86_64::_mm512_test_epi8_mask(
             data,
@@ -330,9 +331,10 @@ unsafe fn ascii7_encode_avx512f(
     mut maxlen: usize,
     mut utflen: usize,
 ) -> crate::EncodeResult {
+    use core::arch::x86_64::__m512i;
     loop {
         #[expect(clippy::cast_ptr_alignment)]
-        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
+        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<__m512i>());
         #[expect(clippy::cast_possible_wrap)]
         let masked = core::arch::x86_64::_mm512_test_epi32_mask(
             data,
@@ -461,9 +463,10 @@ unsafe fn ascii7_decode_avx512bw(
     mut maxlen: usize,
     mut utflen: usize,
 ) -> crate::DecodeResult {
+    use core::arch::x86_64::__m512i;
     loop {
         #[expect(clippy::cast_ptr_alignment)]
-        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
+        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<__m512i>());
         #[expect(clippy::cast_possible_wrap)]
         let masked = core::arch::x86_64::_mm512_test_epi8_mask(
             data,
@@ -501,9 +504,10 @@ unsafe fn ascii7_decode_avx512f(
     mut maxlen: usize,
     mut utflen: usize,
 ) -> crate::DecodeResult {
+    use core::arch::x86_64::__m512i;
     loop {
         #[expect(clippy::cast_ptr_alignment)]
-        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<i32>());
+        let data = core::arch::x86_64::_mm512_loadu_si512(val.cast::<__m512i>());
         #[expect(clippy::cast_possible_wrap)]
         let masked = core::arch::x86_64::_mm512_test_epi32_mask(
             data,
@@ -517,7 +521,7 @@ unsafe fn ascii7_decode_avx512f(
             if maxlen >= 64 {
                 continue;
             }
-            #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), feature = "avx"))]
+            #[cfg(feature = "avx")]
             if maxlen >= 32 && is_x86_feature_detected!("avx") {
                 return ascii7_decode_avx(val, maxlen, utflen);
             }

@@ -1,6 +1,7 @@
 use crate::ascii7_compat::AsciiCompatible;
 
 const WIN_1251_CHARSET: [char; 128] = {
+    // SAFETY: This is a static array of 128 characters, initialized to zero.
     let mut charset: [char; 128] = unsafe { core::mem::zeroed() };
 
     charset[0x80 & 0x7F] = '\u{0402}';

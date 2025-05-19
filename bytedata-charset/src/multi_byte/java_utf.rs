@@ -70,6 +70,7 @@ impl JavaModifiedUtf8Encoding {
     /// The caller must ensure that the pointer is valid and points to a null-terminated string.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
     pub unsafe fn decode_cstr_into(
         bytes: *const i8,
@@ -119,6 +120,7 @@ impl JavaModifiedUtf8Encoding {
     /// ## Safety
     ///
     /// The caller must ensure that the pointer is valid and points to a null-terminated string.
+    #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
     pub unsafe fn decode_cstr_inplace(
         bytes: *mut i8,
@@ -186,6 +188,7 @@ impl JavaModifiedUtf8Encoding {
 
     /// Encodes a `str` into a MUTF-8 `bytedata::SharedStrBuilder`.
     #[cfg(feature = "alloc")]
+    #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
     pub fn encode_into(
         chars: &str,

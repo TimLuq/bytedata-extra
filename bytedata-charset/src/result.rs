@@ -56,4 +56,6 @@ pub enum ExhaustiveEncodeResult<T> {
     Incomplete,
     /// The data input was empty and no more data is expected.
     Empty,
+    /// The buffer is too small to encode the next number of bytes.
+    Overflow,
 }
