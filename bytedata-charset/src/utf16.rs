@@ -219,6 +219,13 @@ impl Utf16Encoding {
             match self.encode_inner(chars) {
                 crate::EncodeResult::Chunk(chunk, consumed) => {
                     let consumed = consumed as usize;
+                    let end = bytes.len() + chunk.len();
+                    if end > 0xFFFF_FFF0 {
+                        if len != 0 {
+                            return crate::ExhaustiveEncodeResult::Encoded(len);
+                        }
+                        return crate::ExhaustiveEncodeResult::Overflow;
+                    }
                     bytes.extend_from_slice(&chunk);
                     len += consumed;
                     // SAFETY: the length is returned from the encode function
