@@ -137,8 +137,12 @@ impl AsciiCompatible {
                     consumed += len as u32;
                 }
                 _ if consumed != 0 => break,
-                crate::DecodeResult::InvalidChar(ch, len) => return crate::ExhaustiveDecodeResult::InvalidChar(ch, len),
-                crate::DecodeResult::Incomplete => return crate::ExhaustiveDecodeResult::Incomplete,
+                crate::DecodeResult::InvalidChar(ch, len) => {
+                    return crate::ExhaustiveDecodeResult::InvalidChar(ch, len)
+                }
+                crate::DecodeResult::Incomplete => {
+                    return crate::ExhaustiveDecodeResult::Incomplete
+                }
                 crate::DecodeResult::Empty => return crate::ExhaustiveDecodeResult::Empty,
             }
         }

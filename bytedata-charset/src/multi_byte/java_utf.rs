@@ -114,7 +114,7 @@ impl JavaModifiedUtf8Encoding {
         #[expect(clippy::cast_possible_truncation)]
         crate::result::ExhaustiveDecodeResult::Decoded((consumed as u32, utf8 as u32))
     }
-    
+
     /// Decodes a full MUTF-8 cstring to a standard UTF-8 inplace.
     ///
     /// ## Safety
@@ -171,9 +171,7 @@ impl JavaModifiedUtf8Encoding {
                 _ if consumed != 0 => {
                     break;
                 }
-                crate::DecodeResult::Empty => {
-                    return crate::result::ExhaustiveDecodeResult::Empty
-                }
+                crate::DecodeResult::Empty => return crate::result::ExhaustiveDecodeResult::Empty,
                 crate::DecodeResult::Incomplete => {
                     return crate::result::ExhaustiveDecodeResult::Incomplete
                 }

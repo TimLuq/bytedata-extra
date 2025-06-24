@@ -51,7 +51,9 @@ impl Utf16Encoding {
         if self.0.is_native() && (bytes.as_ptr() as usize) & 1 == 0 {
             // SAFETY: bytes is a valid pointer to u16
             #[expect(clippy::cast_ptr_alignment)]
-            let native = unsafe { core::slice::from_raw_parts(bytes.as_ptr().cast::<u16>(), bytes.len() >> 1) };
+            let native = unsafe {
+                core::slice::from_raw_parts(bytes.as_ptr().cast::<u16>(), bytes.len() >> 1)
+            };
             Self::decode_native_inner_16(native)
         } else {
             self.decode_const_inner(bytes)
@@ -76,15 +78,21 @@ impl Utf16Encoding {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     #[inline]
-    pub fn decode_native_into(seq: &[u16], chars: &mut bytedata::SharedStrBuilder) -> crate::result::ExhaustiveDecodeResult<usize> {
+    pub fn decode_native_into(
+        seq: &[u16],
+        chars: &mut bytedata::SharedStrBuilder,
+    ) -> crate::result::ExhaustiveDecodeResult<usize> {
         if seq.is_empty() {
             return crate::result::ExhaustiveDecodeResult::Decoded(0);
         }
         Self::decode_native_into_inner(seq, chars)
     }
-    
+
     #[cfg(feature = "alloc")]
-    fn decode_native_into_inner(mut seq: &[u16], chars: &mut bytedata::SharedStrBuilder) -> crate::result::ExhaustiveDecodeResult<usize> {
+    fn decode_native_into_inner(
+        mut seq: &[u16],
+        chars: &mut bytedata::SharedStrBuilder,
+    ) -> crate::result::ExhaustiveDecodeResult<usize> {
         let mut consumed = 0;
         while !seq.is_empty() {
             let res = Self::decode_native_inner_16(seq);
@@ -157,7 +165,6 @@ impl Utf16Encoding {
             None => DecodeResult::InvalidChar(base, 4),
         }
     }
-    
 
     /// Decode a UTF-16 native sequence. This function assumes that the input is at least one u16 long.
     const fn decode_native_inner_16(bytes: &[u16]) -> DecodeResult {
@@ -202,7 +209,7 @@ impl Utf16Encoding {
     }
 
     /// Encode UTF-16 characters.
-    /// 
+    ///
     /// Returns the number of utf-8 bytes consumed.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -252,7 +259,86 @@ impl Utf16Encoding {
     }
 
     /// Encode UTF-16 characters.
-    /// 
+    ///
+    /// Returns the number of utf-8 bytes consumed.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[allow(clippy::allow_attributes)]
+    #[allow(clippy::missing_inline_in_public_items)]
+    pub fn encode_native_into_vec(
+        chars: &str,
+        target: &mut alloc::vec::Vec<u16>,
+    ) -> crate::ExhaustiveEncodeResult<usize> {
+        let mut len = 0;
+        let mut chars = chars;
+        while !chars.is_empty() {
+            match Self::UTF16_NATIVE.encode_inner(chars) {
+                crate::EncodeResult::Chunk(chunk, consumed) => {
+                    let consumed = consumed as usize;
+                    let chunk = chunk.as_slice();
+                    debug_assert!(
+                        chunk.len() % 2 == 0,
+                        "The chunk length must be a multiple of 2 bytes."
+                    );
+                    let clen = chunk.len() >> 1_u8;
+                    target.reserve(clen);
+                    #[allow(clippy::cast_ptr_alignment)]
+                    let src = chunk.as_ptr();
+                    // SAFETY: trg is a valid pointer to u16 that is at least `clen` u16 long
+                    let trg = unsafe { target.as_mut_ptr().add(target.len()) };
+                    let trg = trg.cast::<u8>();
+                    // SAFETY: trg is a valid pointer to u8 that is at least `clen * 2` bytes long due to reserve
+                    unsafe { trg.copy_from_nonoverlapping(src, chunk.len()) };
+                    // SAFETY: `clen` number of u16 elements are written to the vector
+                    unsafe { target.set_len(target.len() + clen) };
+                    len += consumed;
+                    // SAFETY: the length is returned from the encode function
+                    chars = unsafe { chars.get_unchecked(consumed..) };
+                }
+                _ if len != 0 => {
+                    return crate::ExhaustiveEncodeResult::Encoded(len);
+                }
+                crate::EncodeResult::InvalidChar(ch, len_chunk) => {
+                    return crate::ExhaustiveEncodeResult::InvalidChar(ch, len_chunk);
+                }
+                crate::EncodeResult::Incomplete => {
+                    return crate::ExhaustiveEncodeResult::Incomplete;
+                }
+                crate::EncodeResult::Empty => {
+                    return crate::ExhaustiveEncodeResult::Empty;
+                }
+                crate::EncodeResult::Utf8(_len) => {
+                    unreachable!("UTF-8 is not supported in this function");
+                }
+            }
+        }
+        crate::ExhaustiveEncodeResult::Encoded(len)
+    }
+
+    /// Encode UTF-16 characters.
+    ///
+    /// Returns the number of utf-8 bytes consumed and the number of `u16`s written as `(consumed, written)`.
+    #[allow(clippy::allow_attributes)]
+    #[allow(clippy::wildcard_enum_match_arm)]
+    #[inline]
+    pub fn encode_native_into_slice(
+        chars: &str,
+        slice: &mut [u16],
+    ) -> crate::ExhaustiveEncodeResult<(usize, usize)> {
+        let ptr = slice.as_mut_ptr().cast::<u8>();
+        // SAFETY: slice is a valid pointer to u16 slice, so it is also a valid pointer to an u8 slice that is twice as long
+        let bytes = unsafe { core::slice::from_raw_parts_mut(ptr, slice.len() << 1_u8) };
+        match Self::UTF16_NATIVE.encode_into_slice_u8(chars, bytes) {
+            crate::ExhaustiveEncodeResult::Encoded((consumed, written)) => {
+                let written = written >> 1_u8;
+                crate::ExhaustiveEncodeResult::Encoded((consumed, written))
+            }
+            other => other,
+        }
+    }
+
+    /// Encode UTF-16 characters.
+    ///
     /// Returns the number of utf-8 bytes consumed and the number of bytes written as `(consumed, written)`.
     #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
@@ -267,7 +353,8 @@ impl Utf16Encoding {
         while !chars.is_empty() {
             match self.encode_inner(chars) {
                 crate::EncodeResult::Chunk(chunk, consumed) => {
-                    let end = len + chunk.len();
+                    let chunk = chunk.as_slice();
+                    let end = build + chunk.len();
                     if end > slice.len() {
                         if len != 0 {
                             return crate::ExhaustiveEncodeResult::Encoded((len, build));
@@ -275,8 +362,11 @@ impl Utf16Encoding {
                         return crate::ExhaustiveEncodeResult::Overflow;
                     }
                     let consumed = consumed as usize;
-                    build += chunk.len();
-                    slice[len..end].copy_from_slice(chunk.as_slice());
+                    // SAFETY: slice is a valid pointer to u8 and has enough space for the chunk
+                    let trg = unsafe { slice.as_mut_ptr().add(build) };
+                    // SAFETY: trg is a valid pointer to u8 that is at least `chunk.len()` bytes long
+                    unsafe { trg.copy_from_nonoverlapping(chunk.as_ptr(), chunk.len()) };
+                    build = end;
                     len += consumed;
                     // SAFETY: the length is returned from the encode function
                     chars = unsafe { chars.get_unchecked(consumed..) };
@@ -1034,7 +1124,13 @@ mod tests {
             let bytes = [0x61, 0x00, 0x62, 0x00, 0x63, 0x00];
             let res = utf16.decode(&bytes);
             assert_eq!(res, DecodeResult::Char('a', 2));
-            assert_eq!(utf16.encode("abc"), crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&[0x61, 0x00, 0x62, 0x00, 0x63, 0x00]), 3));
+            assert_eq!(
+                utf16.encode("abc"),
+                crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(&[0x61, 0x00, 0x62, 0x00, 0x63, 0x00]),
+                    3
+                )
+            );
         };
         {
             let bytes = [0x61];
@@ -1069,7 +1165,13 @@ mod tests {
             let bytes = [0x00, 0x61, 0x00, 0x62, 0x00, 0x63];
             let res = utf16.decode(&bytes);
             assert_eq!(res, DecodeResult::Char('a', 2));
-            assert_eq!(utf16.encode("abc"), crate::EncodeResult::Chunk(bytedata::ByteChunk::from_slice(&[0x00, 0x61, 0x00, 0x62, 0x00, 0x63]), 3));
+            assert_eq!(
+                utf16.encode("abc"),
+                crate::EncodeResult::Chunk(
+                    bytedata::ByteChunk::from_slice(&[0x00, 0x61, 0x00, 0x62, 0x00, 0x63]),
+                    3
+                )
+            );
         };
         {
             let bytes = [0x61];
@@ -1118,7 +1220,10 @@ mod tests {
         #[cfg(feature = "alloc")]
         {
             let mut buff = bytedata::SharedStrBuilder::new();
-            let res = Utf16Encoding::decode_native_into(&[0x0061, 0x0062, 0x0063, 0xD800, 0xDC00, 0x0064], &mut buff);
+            let res = Utf16Encoding::decode_native_into(
+                &[0x0061, 0x0062, 0x0063, 0xD800, 0xDC00, 0x0064],
+                &mut buff,
+            );
             assert_eq!(res, ExhaustiveDecodeResult::Decoded(6));
             assert_eq!(buff.as_str(), "abc𐀀d");
         };
