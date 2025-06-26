@@ -1,3 +1,5 @@
+use core::mem::MaybeUninit;
+
 use crate::{CharsetDecoding, CharsetEndian, DecodeResult};
 
 /// An encoding for UTF-16LE and UTF-16BE.
@@ -165,6 +167,62 @@ impl Utf16Encoding {
             None => DecodeResult::InvalidChar(base, 4),
         }
     }
+
+    /// Convert a Latin-1 byte sequence to a UTF-16 slice.
+    #[inline]
+    pub const fn from_latin1_const(latin1: &[u8], utf16: &mut [u16]) -> usize {
+        let len = min_usize(latin1.len(), utf16.len());
+        if len == 0 {
+            return 0;
+        }
+        // SAFETY: latin1 is a valid pointer to u8 and utf16 is a valid pointer to u16, and the length is checked
+        unsafe { from_latin1_const_raw(latin1.as_ptr(), utf16.as_mut_ptr(), len) };
+        len
+    }
+
+    /// Convert a Latin-1 byte sequence to a UTF-16 slice.
+    #[inline]
+    pub fn from_latin1(latin1: &[u8], utf16: &mut [u16]) -> usize {
+        let len = min_usize(latin1.len(), utf16.len());
+        if len == 0 {
+            return 0;
+        }
+        let u8ptr = latin1.as_ptr();
+        let u16ptr = utf16.as_mut_ptr();
+        #[cfg(all(target_arch = "x86_64", feature = "avx"))]
+        if len >= 16 && is_x86_feature_detected!("avx2") {
+            // SAFETY: u8ptr is a valid pointer to u8 and u16ptr is a valid pointer to u16, and the length is checked
+            unsafe { from_latin1_avx2(u8ptr, u16ptr, len) };
+            return len;
+        }
+        // SAFETY: u8ptr is a valid pointer to u8 and u16ptr is a valid pointer to u16, and the length is checked
+        unsafe { from_latin1_const_raw(u8ptr, u16ptr, len) };
+        len
+    }
+
+    /// Convert a Latin-1 byte sequence to a UTF-16 slice.
+    #[inline]
+    pub fn from_latin1_uninit<'t>(latin1: &[u8], utf16: &'t mut [MaybeUninit<u16>]) -> &'t mut [u16] {
+        let len = min_usize(latin1.len(), utf16.len());
+        let u16ptr = utf16.as_mut_ptr().cast::<u16>();
+        if len == 0 {
+            // SAFETY: u16ptr is a valid pointer to u16
+            return unsafe { core::slice::from_raw_parts_mut(u16ptr, 0) };
+        }
+        let u8ptr = latin1.as_ptr();
+        #[cfg(all(target_arch = "x86_64", feature = "avx"))]
+        if len >= 16 && is_x86_feature_detected!("avx2") {
+            // SAFETY: u8ptr is a valid pointer to u8 and u16ptr is a valid pointer to u16, and the length is checked
+            unsafe { from_latin1_avx2(u8ptr, u16ptr, len) };
+            // SAFETY: u16ptr is a valid pointer to u16 and the length is checked
+            return unsafe { core::slice::from_raw_parts_mut(u16ptr, len) };
+        }
+        // SAFETY: u8ptr is a valid pointer to u8 and u16ptr is a valid pointer to u16, and the length is checked
+        unsafe { from_latin1_const_raw(u8ptr, u16ptr, len) };
+        // SAFETY: u16ptr is a valid pointer to u16 and the length is checked
+        unsafe { core::slice::from_raw_parts_mut(u16ptr, len) }
+    }
+
 
     /// Decode a UTF-16 native sequence. This function assumes that the input is at least one u16 long.
     const fn decode_native_inner_16(bytes: &[u16]) -> DecodeResult {
@@ -1112,6 +1170,51 @@ impl core::iter::DoubleEndedIterator for Utf16Chars<'_> {
     }
 }
 
+
+
+#[inline]
+const unsafe fn from_latin1_const_raw(latin1: *const u8, utf16: *mut u16, mut len: usize) {
+    loop {
+        len -= 1;
+        if len != 0 {
+            let byte = *latin1.add(len);
+            *utf16.add(len) = byte as u16;
+            continue;
+        }
+        let byte = *latin1;
+        *utf16.add(len) = byte as u16;
+        return;
+    }
+}
+#[inline]
+const fn min_usize(val0: usize, val1: usize) -> usize {
+    if val0 < val1 { val0 } else { val1 }
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "avx"))]
+#[target_feature(enable = "avx2")]
+unsafe fn from_latin1_avx2(mut input: *const u8, mut output: *mut u16, mut len: usize) {
+    use core::arch::x86_64::{__m128i, __m256i, _mm_loadu_si128, _mm256_cvtepu8_epi16, _mm256_storeu_si256};
+    
+    // Process 16 bytes at a time with AVX2
+    #[expect(clippy::cast_ptr_alignment)]
+    while len >= 16 {
+        let data = _mm_loadu_si128(input.cast::<__m128i>());
+        let data = _mm256_cvtepu8_epi16(data);
+        _mm256_storeu_si256(output.cast::<__m256i>(), data);
+        input = input.add(16);
+        output = output.add(16);
+        len -= 16;
+    }
+    
+    // Handle remaining bytes with scalar code
+    if len == 0 {
+        return;
+    }
+    // SAFETY: input and output are valid pointers to u8 and u16 respectively, and len is defined and non-zero
+    unsafe { from_latin1_const_raw(input, output, len) };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1227,5 +1330,14 @@ mod tests {
             assert_eq!(res, ExhaustiveDecodeResult::Decoded(6));
             assert_eq!(buff.as_str(), "abc𐀀d");
         };
+        {
+            static DATA: &[u8; 15] = b"this is a test\x9C";
+            let mut utf16 = [MaybeUninit::uninit(); 32];
+            let encoded = Utf16Encoding::from_latin1_uninit(DATA, &mut utf16);
+            assert_eq!(encoded.len(), DATA.len());
+            for i in 0..DATA.len() {
+                assert_eq!(encoded[i], u16::from(DATA[i]));
+            }
+        }
     }
 }
