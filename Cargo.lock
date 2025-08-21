@@ -46,7 +46,7 @@ dependencies = [
 [[package]]
 name = "bytedata"
 version = "0.1.15"
-source = "git+https://github.com/TimLuq/bytedata.git?branch=main#1516ea331cca23cc1f3d5c7a05b79319d58a0da5"
+source = "git+https://github.com/TimLuq/bytedata.git#78f4fb0025e118c3510bdb084fbe96d263e7b21c"
 dependencies = [
  "bytes",
  "serde",

@@ -8,7 +8,7 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["queue"] }
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", default-features = false, features = ["queue"] }
 
 bytedata-pattern-core = { path = "../bytedata-pattern-core", version = "0.1.0" }
 bytedata-pattern-macros = { path = "../bytedata-pattern-macros", version = "0.1.0" }

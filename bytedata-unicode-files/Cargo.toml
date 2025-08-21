@@ -8,4 +8,4 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["queue"] }
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", default-features = false, features = ["queue"] }

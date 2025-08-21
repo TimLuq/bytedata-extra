@@ -8,7 +8,7 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["chunk", "queue", "alloc"] }
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", default-features = false, features = ["chunk", "queue", "alloc"] }
 tokio_1 = { package = "tokio", version = "1", defaukt-features = false, optional = true}
 async-lock = { package = "async-lock", version = "3", default-features = false, optional = true }
 

@@ -13,7 +13,7 @@ keywords = ["encoding", "decoding", "unicode", "character-set", "charset", "byte
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytedata = { git = "https://github.com/TimLuq/bytedata.git", version = "0.1.15", branch = "main", default-features = false, features = ["chunk", "queue"] }
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", version = "0.1.15", default-features = false, features = ["chunk", "queue"] }
 
 [features]
 default = [

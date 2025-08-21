@@ -10,7 +10,7 @@ authors.workspace = true
 [dependencies]
 smallvec = { version = "1.14.0", features = ["union", "const_new"] }
 
-bytedata = { git = "https://github.com/TimLuq/bytedata.git", branch = "main", default-features = false, features = ["chunk", "queue"] }
+bytedata = { git = "https://github.com/TimLuq/bytedata.git", default-features = false, features = ["chunk", "queue"] }
 
 bytedata-io = { path = "../bytedata-io" }
 bytedata-charset = { path = "../bytedata-charset", features = ["web"] }
