@@ -50,6 +50,56 @@ impl JavaModifiedUtf8Encoding {
         unsafe { decode_const_inner(bytes_ptr, maxlen) }
     }
 
+    /// Decodes a full MUTF-8 slice into a `bytedata::SharedStrBuilder`.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[allow(clippy::allow_attributes)]
+    #[allow(clippy::missing_inline_in_public_items)]
+    pub fn decode_into(
+        bytes: &[u8],
+        chars: &mut bytedata::SharedStrBuilder,
+    ) -> crate::result::ExhaustiveDecodeResult<(u32, u32)> {
+        let utflen_prefix = chars.len();
+        let mut consumed = 0;
+        loop {
+            let bytes = &bytes[consumed..];
+            if bytes.is_empty() {
+                break;
+            }
+            // SAFETY: The pointer is valid for the length.
+            let result = unsafe { decode_const_inner(bytes.as_ptr(), bytes.len()) };
+            match result {
+                crate::DecodeResult::Char(ch, con) => {
+                    chars.push(ch);
+                    consumed += con as usize;
+                }
+                crate::DecodeResult::Utf8(utf8) => {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let utf8 = utf8 as usize;
+                    consumed += utf8;
+                    // SAFETY: The pointer is valid and the length is correct.
+                    let str = unsafe { bytes.get_unchecked(0..utf8) };
+                    // SAFETY: The slice is guaranteed to contain a valid UTF-8 string.
+                    let str = unsafe { core::str::from_utf8_unchecked(str) };
+                    chars.push_str(str);
+                }
+                _ if consumed != 0 => {
+                    break;
+                }
+                crate::DecodeResult::Empty => return crate::result::ExhaustiveDecodeResult::Empty,
+                crate::DecodeResult::Incomplete => {
+                    return crate::result::ExhaustiveDecodeResult::Incomplete
+                }
+                crate::DecodeResult::InvalidChar(ch, con) => {
+                    return crate::result::ExhaustiveDecodeResult::InvalidChar(ch, con)
+                }
+            }
+        }
+        let utf8 = chars.len() - utflen_prefix;
+        #[expect(clippy::cast_possible_truncation)]
+        crate::result::ExhaustiveDecodeResult::Decoded((consumed as u32, utf8 as u32))
+    }
+
     /// Decode characters from the given cstring.
     ///
     /// ## Safety

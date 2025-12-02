@@ -202,7 +202,10 @@ impl Utf16Encoding {
 
     /// Convert a Latin-1 byte sequence to a UTF-16 slice.
     #[inline]
-    pub fn from_latin1_uninit<'t>(latin1: &[u8], utf16: &'t mut [MaybeUninit<u16>]) -> &'t mut [u16] {
+    pub fn from_latin1_uninit<'t>(
+        latin1: &[u8],
+        utf16: &'t mut [MaybeUninit<u16>],
+    ) -> &'t mut [u16] {
         let len = min_usize(latin1.len(), utf16.len());
         let u16ptr = utf16.as_mut_ptr().cast::<u16>();
         if len == 0 {
@@ -222,7 +225,6 @@ impl Utf16Encoding {
         // SAFETY: u16ptr is a valid pointer to u16 and the length is checked
         unsafe { core::slice::from_raw_parts_mut(u16ptr, len) }
     }
-
 
     /// Decode a UTF-16 native sequence. This function assumes that the input is at least one u16 long.
     const fn decode_native_inner_16(bytes: &[u16]) -> DecodeResult {
@@ -1170,8 +1172,6 @@ impl core::iter::DoubleEndedIterator for Utf16Chars<'_> {
     }
 }
 
-
-
 #[inline]
 const unsafe fn from_latin1_const_raw(latin1: *const u8, utf16: *mut u16, mut len: usize) {
     loop {
@@ -1188,14 +1188,20 @@ const unsafe fn from_latin1_const_raw(latin1: *const u8, utf16: *mut u16, mut le
 }
 #[inline]
 const fn min_usize(val0: usize, val1: usize) -> usize {
-    if val0 < val1 { val0 } else { val1 }
+    if val0 < val1 {
+        val0
+    } else {
+        val1
+    }
 }
 
 #[cfg(all(target_arch = "x86_64", feature = "avx"))]
 #[target_feature(enable = "avx2")]
 unsafe fn from_latin1_avx2(mut input: *const u8, mut output: *mut u16, mut len: usize) {
-    use core::arch::x86_64::{__m128i, __m256i, _mm_loadu_si128, _mm256_cvtepu8_epi16, _mm256_storeu_si256};
-    
+    use core::arch::x86_64::{
+        __m128i, __m256i, _mm256_cvtepu8_epi16, _mm256_storeu_si256, _mm_loadu_si128,
+    };
+
     // Process 16 bytes at a time with AVX2
     #[expect(clippy::cast_ptr_alignment)]
     while len >= 16 {
@@ -1206,7 +1212,7 @@ unsafe fn from_latin1_avx2(mut input: *const u8, mut output: *mut u16, mut len: 
         output = output.add(16);
         len -= 16;
     }
-    
+
     // Handle remaining bytes with scalar code
     if len == 0 {
         return;
