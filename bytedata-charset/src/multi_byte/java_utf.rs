@@ -108,7 +108,7 @@ impl JavaModifiedUtf8Encoding {
     #[inline]
     #[must_use]
     #[expect(clippy::missing_const_for_fn)]
-    pub unsafe fn decode_cstr(bytes: *const i8) -> crate::DecodeResult {
+    pub unsafe fn decode_cstr(bytes: *const core::ffi::c_char) -> crate::DecodeResult {
         // SAFETY: forward the safety guarantee to the inner function.
         unsafe { decode_const_inner(bytes.cast::<u8>(), 0) }
     }
@@ -123,7 +123,7 @@ impl JavaModifiedUtf8Encoding {
     #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
     pub unsafe fn decode_cstr_into(
-        bytes: *const i8,
+        bytes: *const core::ffi::c_char,
         chars: &mut bytedata::SharedStrBuilder,
     ) -> crate::result::ExhaustiveDecodeResult<(u32, u32)> {
         let utflen_prefix = chars.len();
@@ -173,7 +173,7 @@ impl JavaModifiedUtf8Encoding {
     #[allow(clippy::allow_attributes)]
     #[allow(clippy::missing_inline_in_public_items)]
     pub unsafe fn decode_cstr_inplace(
-        bytes: *mut i8,
+        bytes: *mut core::ffi::c_char,
     ) -> crate::result::ExhaustiveDecodeResult<(u32, u32)> {
         let mut consumed = 0;
         let mut written = 0;
@@ -758,7 +758,7 @@ mod tests {
         {
             // SAFETY: The pointer is valid cstr.
             let res = unsafe {
-                JavaModifiedUtf8Encoding::decode_cstr_into(buff.as_ptr().cast::<i8>(), &mut strbuff)
+                JavaModifiedUtf8Encoding::decode_cstr_into(buff.as_ptr().cast::<core::ffi::c_char>(), &mut strbuff)
             };
             assert_eq!(
                 res,
